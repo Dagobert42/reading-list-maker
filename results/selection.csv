@@ -1,0 +1,3458 @@
+title,authors,doi,abstract,url,year,source,shared task,survey,disinformation focused,disinformation topics,narrative focused,indicative quote,tasks present,tasks,methods present,methods,datasets present,domains,additional concepts present,additional concepts,paper markdown,research questions,findings,evaluation methods,future work,disinfo definitions present,disinfo definitions,narrative definitions present,narrative definitions,narrative properties stated,narrative properties statements,neural models used,models,languages specified,languages,target group specified,target groups,data perspective specified,perspectives,modalities specified,modalities,requires reannotation
+Which side are you on? Insider-Outsider classification in conspiracy-theoretic social media,"[Name(first='Pavan', last='Holur'), Name(first='Tianyi', last='Wang'), Name(first='Shadi', last='Shahsavari'), Name(first='Timothy', last='Tangherlini'), Name(first='Vwani', last='Roychowdhury')]",10.18653/v1/2022.acl-long.341,"Social media is a breeding ground for threat narratives and related conspiracy theories. In these, an outside group threatens the integrity of an inside group, leading to the emergence of sharply defined group identities: Insiders – agents with whom the authors identify and Outsiders – agents who threaten the insiders. Inferring the members of these groups constitutes a challenging new NLP task: (i) Information is distributed over many poorly-constructed posts; (ii) Threats and threat agents are highly contextual, with the same post potentially having multiple agents assigned to membership in either group; (iii) An agent’s identity is often implicit and transitive; and (iv) Phrases used to imply Outsider status often do not follow common negative sentiment patterns. To address these challenges, we define a novel Insider-Outsider classification task. Because we are not aware of any appropriate existing datasets or attendant models, we introduce a labeled dataset (CT5K) and design a model (NP2IO) to address this task. NP2IO leverages pretrained language modeling to classify Insiders and Outsiders. NP2IO is shown to be robust, generalizing to noun phrases not seen during training, and exceeding the performance of non-trivial baseline models by 20%.",https://aclanthology.org/2022.acl-long.341.pdf,2022,acl_anthology,No,No,Yes,Conspiracy Theories,Yes,Social media is a breeding ground for threat narratives and related conspiracy theories.,Yes,Insider-Outsider classification,Yes,pretrained language modeling,Yes,conspiracy-theoretic social media,No,,"## **Which side are you on? Insider-Outsider classification in** **conspiracy-theoretic social media**
+
+**Pavan Holur** [1] **, Tianyi Wang** [1] **, Shadi Shahsavari** [1] **,**
+**Timothy Tangherlini** [2], and **Vwani Roychowdhury** [1]
+
+1 Department of Electrical and Computer Engineering, UCLA
+2 Department of Scandinavian, UC Berkeley
+{pholur,tianyiw,shadihpp,vwani}@ucla.edu, tango@berkeley.edu
+
+
+
+**Abstract**
+
+
+Social media is a breeding ground for threat
+narratives and related conspiracy theories. In
+these, an _outside_ group threatens the integrity
+of an _inside_ group, leading to the emergence
+of sharply defined group identities: _Insider_ s –
+agents with whom the authors identify and _Out-_
+_sider_ s – agents who threaten the insiders. Inferring the members of these groups constitutes
+a challenging new NLP task: (i) Information
+is distributed over many poorly-constructed
+posts; (ii) Threats and threat agents are highly
+contextual, with the same post potentially having multiple agents assigned to membership in
+either group; (iii) An agent’s identity is often
+implicit and transitive; and (iv) Phrases used to
+imply _Outsider_ status often do not follow common negative sentiment patterns. To address
+these challenges, we define a novel _Insider_   _Outsider_ classification task. Because we are not
+aware of any appropriate existing datasets or attendant models, we introduce a labeled dataset
+(CT5K) and design a model (NP2IO) to address
+this task. NP2IO leverages pretrained language
+modeling to classify _Insider_ s and _Outsider_ s.
+NP2IO is shown to be robust, generalizing to
+noun phrases not seen during training, and exceeding the performance of non-trivial baseline
+models by 20%.
+
+
+**1** **Background and Motivation**
+
+Narrative models – often succinctly represented
+as a network of characters, their roles, their interactions ( _syuzhet_ ) and associated time-sequencing
+information ( _fabula_ ) – have been a subject of considerable interest in computational linguistics and
+narrative theory. Stories rest on the generative
+backbone of narrative frameworks (Bailey, 1999;
+Beatty, 2016). While the details might vary from
+one story to another, this variation can be compressed into a limited set of domain-dependent narrative roles and functions (Dundes, 1962).
+Social narratives that both directly and indirectly
+contribute to the construction of individual and
+
+
+
+group identities are an emergent phenomenon resulting from distributed social discourse. Currently,
+this phenomenon is most readily apparent on social media platforms, with their large piazzas and
+niche enclaves. Here, multiple threat-centric narratives emerge and, often, over time are linked together into complex conspiracy theories (Tangherlini et al., 2020). Conspiracy theories, and their
+constituent threat narratives (legend, rumor, personal experience narrative) share a signature semantic structure: an implicitly accepted _Insider_
+group; a diverse group of threatening _Outsider_ s;
+specific threats from the _Outsider_ directed at the
+_Insider_ s; details of how and why _Outsider_ s are
+threatening; and a set of strategies proposed for
+the _Insider_ s to counter these threats (Tangherlini,
+2018). Indeed, the _Insider_ / _Outsider_ groups are
+fundamental in most studies of belief narrative,
+and have been exhaustively studied in social theory
+and more specifically, in the context of conspiracy
+theories (Bodner et al., 2020; Barkun, 2013). On
+social media, these narratives are negotiated one
+post at a time, expressing only short pieces of the
+“immanent narrative whole” (Clover, 1986). This
+gives rise to a new type of computational linguistic problem: _Given a large enough corpus of so-_
+_cial media text data, can one automatically distill_
+_semantically-labeled narratives (potentially sev-_
+_eral overlapping ones) that underlie the fragmen-_
+_tary conversational threads?_
+
+
+Recent work (Shahsavari et al., 2020b; Tangherlini et al., 2020; Shahsavari et al., 2020a; Holur
+et al., 2021) has shown considerable promise that
+such scalable automated algorithms can be designed. An automated pipeline of interlocking machine learning modules decomposes the posts into
+actors, actants and their inter-actant relationships
+to create narrative networks via aggregation. _These_
+_network representations are interpretable on in-_
+_spection_, allowing for the easy identification of
+the various signature semantic structures: _Insider_ s,
+
+
+
+4975
+
+
+_Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics_
+_Volume 1: Long Papers_, pages 4975 - 4987
+May 22-27, 2022 c _⃝_ 2022 Association for Computational Linguistics
+
+
+Figure 1: **A pair of inferred text segments labeled by NP2IO showing** _**Insider-Outsider**_ **context-sensitivity:**
+Colored spans are used to highlight noun phrases that are inferred (red for _Outsider_ s; blue for _Insider_ s). POS tags
+are shown along with the noun phrases to illustrate an example of syntactic and semantic hints used by NP2IO to
+generate the inferred labels. Note that, based solely on context, the same agents (“tech”, “vaccines”, “People”, “Bill
+Gates” and “the vaccine”) switch _Insider-Outsider_ label. _Even though the training data is highly biased in terms of_
+_the identities of the Insiders/Outsiders, the pretrained language model used in our classifier allows NP2IO to learn_
+_to infer using the context phrases and_ not _by memorizing the labels._
+
+
+
+_Outsider_ s, strategies for dealing with _Outsider_ s and
+their attendant threats and, in the case of conspiracy
+theories, causal chains of events that support that
+theory.
+_By itself, this unsupervised platform does not_
+_“understand” the different narrative parts_ . Since
+the submodules are not trained to look for specific semantic abstractions inherent in conspiracy
+theories, the platform cannot automatically generate a semantically tagged narrative for downstream
+NLP tasks. It cannot, for example, generate a list
+across narratives of the various outside threats and
+
+attendant inside strategies being recommended on
+a social media forum, nor can it address why these
+threats and strategies are being discussed.
+
+
+**2** **The Novel Insider vs. Outsider**
+
+**Classification Problem**
+
+As a fundamental first step bringing in supervised
+information to enable automated narrative struc
+ture discovery, we introduce the _Insider_ - _Outsider_
+classification task: To classify the noun phrases in
+a post as _Insider_, _Outsider_ or _neither_ .
+A working conceptualization of what we consider _Insider_ s and _Outsider_ s is provided in the following insets. As with most NLP tasks, we do not
+provide formal definitions of and rules to determine these groups. Instead we let a deep learning
+model learn the representations needed to capture
+these notions computationally by training on data
+annotated with human-generated labels.
+The partitioning of actors from a post into these
+
+
+
+different categories is inspired by social categorization, identification and comparison in the wellestablished Social Identity Theory (SIT) (Tajfel
+et al., 1979; Tajfel, 1974) and rests on established
+perspectives from Narrative Theory (Dundes, 1962;
+Labov and Waletzky, 1967; Nicolaisen, 1987).
+Following are some of the reasons why this classification task is challenging and why the concepts of _Insider_ s/ _Outsider_ s are not sufficiently captured by existing labeled datasets used in Sentiment
+
+
+
+
+
+4976
+
+
+Analysis (SA) (discussed in more detail in Section
+3):
+1. **Commonly-held Beliefs and Worldviews:**
+Comprehensively incorporating shared values, crucial to the classification of _Insider_ s and _Outsider_ s,
+is a task with varied complexity. Some beliefs are
+easily enumerated: most humans share a perception
+of a nearly universal set of threats (virus, bomb,
+cancer, dictatorship) or threatening actions (“kills
+millions of people”, “tries to mind-control everyone”) or benevolent actions (“donating to a charitable cause”, “curing disease”, “freeing people”).
+Similarly, humans perceive themselves and their
+close family units as close, homogeneous groups
+with shared values, and therefore “I”, “us”, “my
+children” and “my family” are usually _Insider_ s. In
+contrast, “they” and “them” are most often _Out-_
+_sider_ s.
+
+
+Abstract beliefs pose a greater challenge as the
+actions that encode them can be varied and subtle.
+
+For example, in the post: “The microchips in vaccines track us”, the noun phrase “microchips” is in
+the _Outsider_ category as it violates the _Insider_ s’
+right to privacy by “track[ing] us”. Thus, greater
+attention needs to be paid in labeling datasets, highlighting ideas such as the right to freedom, religious
+beliefs, and notions of equality.
+
+
+2. **Contextuality and Transitivity:** People express their opinions of _Insider/Outsider_ affiliation
+by adding _contextual_ clues that are embedded in
+the language of social media posts. For example, a
+post “We should build cell phone towers” suggests
+that “cell phone towers” are helpful to _Insider_ s,
+whereas a post “We should build cell phone towers
+and show people how it fries their brains” suggests,
+in contrast, that “cell phone towers” are harmful
+to _Insiders_ and belong, therefore, to the class of
+_Outsider_ s. _Insider/Outsider_ affiliations are also
+implied in a _transitive_ fashion within a post. For
+example, consider two posts: (i) “Bill Gates is developing a vaccine. Vaccines _kill_ people.” and
+(ii) “Bill Gates is developing a vaccine. Vaccines
+_can eradicate_ the pandemic.” In the first case, the
+vaccine’s toxic quality and attendant _Outsider_ status would transfer to Bill Gates, making him an
+_Outsider_ as well; in the second post, vaccine’s beneficial qualities would transfer to him, now making
+“Bill Gates” an _Insider_ .
+
+
+3. **Model Requirement under Biased Data Con-**
+**ditions:** Designing effective classifiers that do not
+inherit bias from the training data – especially data
+
+
+
+in which particular groups or individuals are derided or dehumanized – is a challenging but necessary task. Because conspiracy theories evolve,
+building on earlier versions, and result in certain
+communities and individuals being “othered”, our
+models _must_ learn the phrases, contexts, and transitivity used to ascribe group membership, here
+either _Insider_ s or _Outsider_ s and not memorize
+
+the communities and/or individuals being targeted.
+Figure 1 illustrates an example where we probed
+our model to explore whether such a requirement
+is indeed satisfied. The first text conforms to the
+bias in our data, where “tech”, “Bill Gates”, and
+“vaccines” are primarily _Outsiders_ . The second
+text switches the context by changing the phrases.
+Our classifier is able to correctly label these same
+entities, now presented in a different context, as
+_Insider_ s! We believe that such subtle learning is
+possible because of the use of pretrained language
+models. We provide several such examples in Table 3 and Figure 3 and also evaluate our model for
+Zero-shot learning in Table 1 and Figure 6.
+
+
+**3** **Our Framework and Related Work**
+
+
+Recent NLP efforts have examined the effective
+ness of using pretrained Language Models (LM)
+such as BERT, DistilBERT, RoBERTa, and XLM
+to address downstream classification tasks through
+fine-tuning (Sanh et al., 2020; Liu et al., 2019;
+Lample and Conneau, 2019). Pretraining establishes the contextual dependencies of language
+prior to addressing a more specialized task, enabling rapid and efficient transfer learning. A crucial benefit of pretraining is that, in comparison to
+training a model from scratch, fewer labeled samples are necessary. By fine-tuning a pretrained LM,
+one can subsequently achieve competitive or better
+performance on an NLP task. As discussed in Section 2, since our model is required to be _contextual_
+and _transitive_, both of which are qualities that rely
+on the context embedded in language, we utilize a
+similar architecture.
+
+In recent work involving span-based classification tasks, token-classification heads have proven
+to be very useful for tasks such as, Parts-of-Speech
+(POS) Tagging, Named Entity Recognition (NER)
+and variations of Sentiment Analysis (SA) (Yang
+et al., 2019; Vlad et al., 2019; Yin et al., 2020).
+Since the _Insider_ - _Outsider_ classification task is
+also set up as a noun phrase labeling task, our architecture uses a similar token-classification head
+on top of the pretrained LM backbone.
+
+
+
+4977
+
+
+Current SA datasets’ definitions of positive negative and neutral sentiments can be thought of as a
+“particularized” form of the _Insider-Outsider_ classification task. For example, among the popular
+datasets used for SA, Rotten Tomatoes, Yelp reviews (Socher et al., 2013) and others (Dong et al.,
+2014; Pontiki et al., 2014) implicitly associate a
+sentiment’s origin to the post’s author (source) (a
+single _Insider_ ) and its intended target to a movie
+or restaurant (a single _Outsider_ if the sentiment is
+_negative_ or an _Insider_ if _positive_ ). The post itself
+generally contains information about the target and
+particular aspects that the _Insider_ found necessary
+to highlight.
+In more recent SA work, such as Aspect-Based
+Sentiment Analysis (ABSA) (Gao et al., 2021; Li
+et al., 2019; Wang et al., 2021; Dai et al., 2021),
+researchers have developed models to extract sentiments – positive, negative, neutral – associated
+with particular aspects of a target _entity_ . One of
+the subtasks of ABSA, aspect-level sentiment classification (ALSC), has a form that is particularly
+close to the _Insider_ - _Outsider_ classification. Interpreted in the context of our task, the author of the
+post is an _Insider_ although now there can potentially be multiple targets or “aspects” that need
+to be classified as _Insider_ s and _Outsider_ s. Still,
+the constructed tasks in ABSA appear to not align
+well with the goal of _Insider_ - _Outsider_ classification: 1) Datasets are not _transitive_ : Individual posts
+appear to have only one agent that needs classification, or a set of agents, each with their own separate
+sets of descriptors; 2) The ALSC data is often at the
+sentence-level as opposed to post-level, limiting the
+context-space for inference. Despite these obvious
+differences, we quantitatively verify our intuitions
+in Section 7.1, and show that ABSA models do not
+generalize to our dataset.
+Closely related to ABSA is Stance Classification (SC) (also known as Stance Detection / Identification), the task of identifying the stance of
+the text author ( in favor of, against or
+neutral ) toward a target (an entity, concept,
+event, idea, opinion, claim, topic, etc.)(Walker
+et al., 2012; Zhang et al., 2017; Küçük and Can,
+2021). Unlike ABSA, the target in SC does not
+need to be embedded as a span within the context.
+For example, a perfect SC model given an input for
+classification of context: _This house would abolish_
+_the monarchy._ and target: _Hereditary succession_,
+would predict the _Negative_ label (Bar-Haim et al.,
+2017; Du et al., 2017). While SC appears to re
+
+
+quire a higher level of abstraction and, as a result,
+a model of higher complexity and better generalization power than those typically used for ABSA,
+current implementations of SC are limited by the finite set of queried targets; in other words, SC models currently do not generalize to unseen abstract
+targets. Yet, in real-time social media, potential
+targets and agents exhibit a continuous process of
+emergence, combination and dissipation. We seek
+to classify these shifting targets using the transitive
+property of language, and would like the language
+to provide clues about the class of one span _rela-_
+_tive_ to another. Ultimately, while SC models are
+a valuable step in the direction of better semantic
+understanding, they are ill-suited to our task.
+Parallel to this work in SA, there are complementary efforts in consensus threat detection on
+social media (Wester et al., 2016; Kandias et al.,
+2013; Park et al., 2018), a task that broadly attempts to classify longer segments of text – such
+as comments on YouTube or tweets on Twitter –
+
+as more general “threats”. The nuanced instruction
+to the labelers of the data is to _identify whether_
+_the author of the post is an Outsider from the la-_
+_beler’s perspective as an Insider_ . Once again,
+we observe that this task aligns with the _Insider_ _Outsider_ paradigm, but does not exhaust it, and the
+underlying models cannot accomplish our task.
+The sets of _Insider_ s and _Outsider_ s comprise
+a higher-order belief system that cannot be adequately captured with the current working definitions of sentiment nor the currently available
+datasets. This problem presents _a primary motiva-_
+_tion for creating a new dataset_ . For example, the
+post: “Microchips are telling the government where
+we are”, does not directly feature a form of prototypical sentiment associated with “microchips”,
+“the government” and “we”, yet clearly insinuates
+an invasion on our right to privacy making clear
+the _Insider_ s (“we”) and _Outsider_ s (“microchips”,
+“the government”) in the post.
+
+
+**4** **Data Collection**
+
+
+To construct our novel dataset – **C** onspiracy
+**T** heory-5000 ( **CT5K** ) – we designed crawlers to
+extract a corpus of social media posts generated
+by the underlying narrative framework of vaccine
+hesitancy (Details of the crawlers are documented
+in Appendix A.1). Vaccine hesitancy is a remarkably resilient belief fueled by conspiracy theories
+that overlaps with multiple other narratives including ones addressing “depopulation”, “government
+
+
+
+4978
+
+
+overreach and the deep state”, “limits on freedom
+of choice” and “Satanism”. The belief’s evolution
+
+on social media has already enabled researchers
+to take the first steps in modeling critical parts of
+the underlying generative models that drive antivaccination conversations on the internet (Tangherlini et al., 2016; Bandari et al., 2017). Moreover,
+vaccine hesitancy is especially relevant in the context of the ongoing COVID-19 pandemic (Burki,
+2020).
+On the crawled corpus, we extract the nounchunks from each post using SpaCy’s noun chunk
+extraction module and dependency parsers (Honnibal and Johnson, 2015). A noun chunk is a subtree of the dependency parse tree, the headword of
+which is a noun. The result is a set of post-phrase
+pairs, ( `p` _,_ `n` ), where `p` is a post and `n` is one of the
+noun phrases extracted from the post.
+Amazon Mechanical Turk (AMT) (see Appendix
+A.2 for labeler instructions) was used to label
+the post-phrase pairs. For each pair, the labeler
+was asked, _given the context_, whether the writer
+of the post `p` perceives the noun phrase `n` to be
+an _Insider_, _Outsider_ or _neither_ (N/A). The labeler then provides a label _c ∈C_, where _C_ =
+_{Insider, Outsider, N/A}_ (hence _|C|_ = 3 ). The
+triplets of post-phrase pairs along with their labels
+_|D|_
+form the dataset _D_ = ��( `p` _i_ _,_ `n` _i_ ) _, c_ _i_ �� _i_ =1 [. Note]
+that a single post can appear in multiple triplets,
+because multiple different noun phrases can be extracted and labeled from a single post. The overall
+class distribution and a few conditional class dis
+tributions across the labeled samples for several
+particular noun phrases are provided in Figure 5 in
+the Appendix B.
+Manual inspection of the labeled samples
+(( `p` _,_ `n` ) _, c_ ) suggests that the quality of the dataset
+is good ( _<_ 10% misclassified by random sampling). The now-labeled CT5K dataset (Holur
+et al., 2022) [1] ( _|D|_ = 5000 samples) is split into
+training ( 90% ), and 10% testing sets. 10% of the
+training set is held out for validation. The final
+training set is 20 -fold augmented by BERT-driven
+multi-token insertion (Ma, 2019).
+
+
+**5** **Methodology and Pipeline**
+
+The **N** oun- **P** hrase-to- _**I**_ _nsider_ - _**O**_ _utsider_ (NP2IO)
+model [2] adopts a token classification architecture
+comprising a BERT-like pre-trained backbone and
+a softmax classifier on top of the backbone. Token
+
+1 [See: Data and Model Checkpoints](https://osf.io/hgnm7/)
+2 [Code Repository: NP2IO](https://github.com/pholur/situation-modeling)
+
+
+
+level labels are induced from the span-level labels
+for the fine-tuning over CT5K, and the span-level
+labeling of noun phrases is done through majority
+vote during inference.
+
+
+**5.1** **Fine-tuning Details**
+
+
+An outline of the fine-tuning pipeline is provided
+in Figure 2.
+Given a labeled example (( `p` _,_ `n` ) _, c_ ), the model
+labels each token _t_ _i_ in the post `p` = [ _t_ 1 _, . . ., t_ _N_ ],
+where _N_ is the number of tokens in the post `p` . The
+BERT-like backbone embeds each token _t_ _i_ into a
+contextual representation Φ _i_ _∈_ R _[d]_ (for example,
+_d_ = 768 for BERT-base or RoBERTa-base). The
+embedding is then passed to the softmax classification layer
+
+
+_**π**_ _i_ ≜ Softmax( **W** _[T]_ Φ _i_ + **b** ) (1)
+
+
+where _**π**_ _i_ _∈_ ∆ _[|C|]_ is the _Insider_ - _Outsider_ classification prediction probability vector of the _i_ [th] token,
+and **W** _∈_ R _[d][×|C|]_ and **b** _∈_ R _[|C|]_ are the parameters
+of the classifier.
+The ground truth class label _c_ accounts for all
+occurrences of the noun phrase `n` in the post `p` .
+We use this span-level label to induce the tokenlevel label and facilitate the computation of the
+fine-tuning loss.
+Concretely, consider the spans where the noun
+phrase `n` occurs in the post `p` : _S_ `n` = _{s_ 1 _, . . ., s_ _M_ _}_,
+where _s_ _j_ _∈_ _S_ `n` denotes the span of the _j_ [th] occurrence of `n`, and _M_ is the number of occurrences
+of `n` in `p` . Each span is a sequence of one or more
+tokens. The set of tokens appearing in one of these
+labeled spans is:
+
+
+_T_ `n` = _{t ∈_ `p` _| ∃s ∈_ _S_ `n` s.t. _t ∈_ _s} ._ (2)
+
+
+We define the fine-tuning loss _L_ of the labeled
+example (( `p` _,_ `n` ) _, c_ ) as the cross-entropy (CE) loss
+computed over _T_ `n` using _c_ as the label for each
+token in it,
+
+
+_L_ ( `p` _,_ `n` _, c_ ) = � _−_ log � ( _**π**_ _i_ ) _c_ � (3)
+
+_i_ : _t_ _i_ _∈T_ `n`
+
+
+where ( _**π**_ _i_ ) _c_ denotes the prediction probability for
+the class _c ∈C_ of the _i_ [th] token.
+
+The fine-tuning is done with mini-batch gradient
+descent for the classification layer and a number
+of self-attention layers in the backbone. The number of fine-tuned self-attention layers is a hyperparameter. The scope of hyperparameter tuning is
+provided in Table 4.
+
+
+
+4979
+
+
+Figure 2: **NP2IO - An Outline of the Fine-tuning Pipeline:** A post is tokenized and aligned to noun chunks
+that are independently identified from the post with a pre-trained SpaCy parser. The BERT model is fine-tuned to
+identify the labels of each token in context of a post based on AMT labels of the higher-order noun phrases. Loss is
+Cross-Entropy (CE) loss computed on only tokens relevant for detection post SpaCy-noun phrase identification.
+
+
+
+**5.2** **Real-time Inference and Accuracy**
+
+**Measurement**
+
+
+During fine-tuning, we extend the label of a noun
+phrase to all of its constituent tokens; during inference, conversely, we summarize constituent token
+labels to classify the noun phrases by a majority
+vote. For a pair of post and noun-phrase ( `p` _,_ `n` ),
+assuming the definition of _{t_ _i_ _}_ _[N]_ _i_ =1 [,] _[ {]_ _**[π]**_ _[i]_ _[}]_ _[N]_ _i_ =1 [and] _[ T]_ `[n]`
+from the Section 5.1, the _Insider_ - _Outsider_ label
+prediction ˆ _c_ is given by
+
+
+
+post-phrase pair ( `p` _,_ `n` ), give a fixed classification
+prediction: ˆ _c_ = _Insider_ (DET-I), ˆ _c_ = _Outsider_
+(DET-O) or ˆ _c_ = _N/A_ (DET-NA).
+
+
+- **Naïve Bayes Model (NB / NB-L):** Given a
+training set, the naïve Bayes classifier estimates
+the likelihood of each class conditioned on a
+noun chunk _P_ _C,N_ ( _c|_ `n` ) assuming its independence w.r.t. the surrounding context. That is,
+a noun phrase predicted more frequently in the
+training-set as an _Insider_ will be predicted as an
+_Insider_ during the inference, regardless of the
+context. For noun phrases not encountered during training, the uniform prior distribution over
+_C_ is used for the prediction. The noun chunk
+may be lemmatized (by word) during training
+and testing to shrink the conditioned event space.
+We abbreviate the naïve Bayes model without
+lemmatization as NB, and the one with lemma
+tization as NB-L.
+
+
+- **GloVe+CBOW+XGBoost** **(CBOW - 1/2/5):**
+
+This baseline takes into account the context of a
+
+post but uses global word embeddings, instead
+of contextual-embeddings. A window length _w_
+is fixed such that for each noun phrase, we extract the _w_ words before and _w_ words after the
+
+noun phrase, creating a set of context words, _S_ _w_ .
+Stopwords are filtered, and the remaining con
+
+
+_c_ ˆ = arg max
+_k_
+
+
+
+� 1 _{k_ =(arg max _κ_ ( _**π**_ _i_ ) _κ_ ) _}_ _._ (4)
+
+_i_ : _t_ _i_ _∈T_ `n`
+
+
+
+Now _c_ can be compared to ˆ _c_ with a number of
+classification evaluation metrics. Visual display of
+individual inference results such as those in Figure
+1 are supported by displaCy (Honnibal and Montani, 2017).
+
+
+**6** **Baseline Models**
+
+In this section, we list baselines that we compare
+to our model’s performance ordered by increasing
+parameter complexity.
+
+
+ - **Random Model (RND):** Given a sample from
+the testing set _{_ `p` _,_ `n` _}_, _c_ ˆ is randomly selected with uniform distribution from _C_ =
+_{Insider, Outsider, N/A}_ .
+
+
+ - **Deterministic Model (DET - I/O/NA):** For any
+
+
+
+4980
+
+
+text words are lemmatized and encoded via 300  
+dimensional GloVe (Pennington et al., 2014).
+The Continuous Bag of Words (CBOW) model
+(Mikolov et al., 2013) averages the representative GloVe vectors in _S_ _w_ to create an aggregate
+contextual vector for the noun phrase. XGBoost
+(Chen and Guestrin, 2016) is used to classify the
+aggregated contextual vector. The same model
+is applied on the test set to generate labels. We
+consider window lengths of 1, 2 and 5 (CBOW1, CBOW-2 and CBOW-5 respectively).
+
+
+**7** **Results and Evaluation**
+
+
+Comparison of NP2IO to baselines is provided
+in Table 1. The random (RND) and deterministic (DET-I, DET-O, DET-NA) models perform
+poorly. We present these results to get a better sense of the unbalanced nature of the labels
+
+in the CT5K dataset (see Figure 5). The naïve
+Bayes model (NB) and its lemmatized form (NBL) outperform the trivial baselines. However, they
+perform _worse_ than the two contextual models,
+GloVe+CBOW+XGBoost and NP2IO. This fact
+
+validates a crucial property of our dataset: _De-_
+_spite the bias in the gold standard labels for par-_
+_ticular noun phrases such as “I”,“they” and “mi-_
+_crochip” – see Figure 5 in Appendix B – context_
+_dependence plays a crucial role in Insider-Outsider_
+_classification._ Furthermore, NP2IO outperforms
+GloVe+CBOW+XGBoost (CBOW-1, CBOW-2,
+CBOW-5) summarily. While both types of models employ context-dependence to classify noun
+phrases, NP2IO does so more effectively. The finetuning loss convergence plot for the optimal performing NP2IO model is presented in Figure 4 in
+Appendix B and model checkpoints are uploaded
+in the data repository.
+
+
+**7.1** **Does CT5K really differ from prior ABSA**
+**datasets?**
+
+
+Given the limitations of current ABSA datasets for
+
+our task (see Section 2 and Section 3), we computationally show that CT5K is indeed a different dataset, particularly in comparison to other
+classical ones in Table 2. For this experiment,
+we train near-state-of-the-art ABSA models with
+
+RoBERTa-base backbone (Dai et al., 2021) on
+three popular ABSA datasets – Laptop reviews
+and Restaurant reviews from SemEval 2014 task
+
+4 (Pontiki et al., 2014), and Tweets (Dong et al.,
+2014). Each trained model is then evaluated on all
+
+three datasets _as well as_ the test set of CT5K. The
+
+
+
+_Insider_ class in CT5K is mapped to the _positive_
+sentiment and the _Outsider_ class to the _negative_
+
+sentiment. The F1-macro scores of the models
+
+trained and tested among the three ABSA datasets
+are much higher than the scores when testing on the
+CT5K dataset. _Clearly, models that are success-_
+_ful with typical ABSA datasets do not effectively_
+_generalize to CT5K, suggesting that our dataset is_
+_different._
+
+
+**7.2** **Classifying Noun Phrases at Zero-shot**
+
+
+A challenge for any model, such as NP2IO, is
+zero-shot performance, when it encounters noun
+phrases never tagged during training. Answering this question offers a means for validating
+the context-dependence requirement, mentioned in
+Section 2. This evaluation is conducted on a sub
+set of the entire testing set: A sample of the subset
+_{_ `p` _,_ `n` _}_ is such that the word-lemmatized, stopwordremoved form of `n` does not exist in the set of word
+lemmatized, stopword-removed noun phrases seen
+during training. We extract 30% of test samples to
+be in this set. The results are presented in Table 1.
+As expected, the performance of the naïve Bayes
+models (NB, NB-L) degrades severely to random.
+The performance of the contextual models CBOW1/2/5, and NP2IO stay strong, suggesting effective
+context sensitivity in inferring the correct labels
+for these models. A visualization of the zero-shot
+
+capabilities of NP2IO on unseen noun phrases is
+presented in Figure 6 in Appendix B.
+
+
+**7.3** **Does NP2IO Memorize? An Adversarial**
+
+**Experiment**
+
+
+We construct a set of adversarial samples to evaluate the extent to which NP2IO accurately classifies
+a noun phrase that has a highly-biased label distribution in CT5K. We consider 3 noun phrases in particular: “microchip”, “government”, and “chemical”. Each of these has been largely labeled as _Out-_
+_sider_ s. The adversarial samples for each phrase,
+in contrast, are manually aggregated ( 5 seed posts
+augmented 20 times each) to suggest that the phrase
+is an _Insider_ (see Table 5 in Appendix B for the
+seed posts). We compute the recall of NP2IO in
+detecting these _Insider_ labels (results in Table 3).
+NP2IO is moderately robust against adversarial attacks: _In other words, highly-skewed distributions_
+_of labels for noun phrases in our dataset do not_
+_appear to imbue a similar drastic bias into our_
+
+_model._
+
+
+
+4981
+
+
+|Col1|Performance on the Test Set|Performance in Zero-Shot|
+|---|---|---|
+|**Model**|**Acc.**<br>**P**<br>**R**<br>**F1**<br>**F1(w)**|**Acc.**<br>**P**<br>**R**<br>**F1**<br>**F1(w)**|
+|RND|0.334<br>0.343<br>0.334<br>0.321<br>0.350|0.280<br>0.273<br>0.241<br>0.239<br>0.316|
+|DET-I|0.312<br>0.104<br>0.333<br>0.159<br>0.148|0.280<br>0.093<br>0.333<br>0.146<br>0.123|
+|DET-O|0.504<br>0.168<br>0.333<br>0.223<br>0.338|0.593<br>0.198<br>0.333<br>0.248<br>0.442|
+|DET-NA|0.184<br>0.061<br>0.333<br>0.104<br>0.057|0.127<br>0.042<br>0.333<br>0.075<br>0.028|
+|NB|0.520<br>0.473<br>0.478<br>0.474<br>0.523|0.333<br>0.341<br>0.310<br>0.295<br>0.369|
+|NB-L|0.468<br>0.397<br>0.387<br>0.386<br>0.453|0.360<br>0.389<br>0.434<br>0.356<br>0.373|
+|CBOW-1|0.490<br>0.419<br>0.383<br>0.373<br>0.448|0.527<br>0.408<br>0.361<br>0.360<br>0.489|
+|CBOW-2|0.520<br>0.462<br>0.415<br>0.410<br>0.484|0.553<br>0.441<br>0.375<br>0.368<br>0.509|
+|CBOW-5|0.526<br>0.459<br>0.419<br>0.414<br>0.489|0.553<br>0.393<br>0.375<br>0.369<br>0.514|
+|**NP2IO**|**0.650**<br>**0.629**<br>**0.546**<br>**0.534**<br>**0.619**|**0.693**<br>**0.682**<br>**0.536**<br>**0.543**<br>**0.671**|
+
+
+Table 1: **Performance of NP2IO versus multiple baselines on the test set:** Our model (in bold) performs
+competitively and outperforms Naïve Bayes, CBOW models across metrics. Furthermore, it retains its performance
+to classify noun phrases unseen (post-lemmatization and stopword removal) during training. Predictably, the
+performance of the Naïve Bayes classifier in this zero-shot setting drops drastically to near random.
+
+
+
+|Test Dataset|Train Dataset|
+|---|---|
+||Laptop<br>Restaurants<br>Tweets|
+|Laptop|0.804<br>0.768<br>0.658|
+|Restaurants|0.754<br>0.825<br>0.657|
+|Tweets|0.526<br>0.546<br>0.745|
+|**CT5K**|**0.347**<br>**0.424**<br>**0.412**|
+
+
+Table 2: **F1-macro scores for the ABSA model trained**
+
+**on conventional SA datasets from SemEval 2014 task**
+
+**4:** All models perform poorly in testing on the CT5K
+dataset while performing well in testing on ABSA
+datasets. This suggests that the CT5K dataset is indeed differentiated from the ABSA datasets.
+
+|Noun<br>Phrases|CT5K Outsider Insider Recall in<br>Labels (%) adversarial text|
+|---|---|
+|microchip|100%<br>**80%**|
+|government|80%<br>**89%**|
+|chemical|100%<br>**62%**|
+
+
+
+Table 3: **Adversarial inferencing tasks for the trained**
+**NP2IO model:** Three noun phrases with very high _Out-_
+_sider_ status (100%, 80%, 100%, respectively) in the
+CT5K training set are used to construct posts where
+their contextual role is beneficial, and hence, should be
+labeled as _Insider_ (see Section 2). The results show that
+NP2IO largely learned to use the contextual information for its inference logic, and did not memorize the
+agent bias in CT5K. We speculate that the exhibited bias
+towards “Chemicals” is due to the large body of text
+documents that discusses the adverse effects of chemi
+cals, and hence is encoded in the embedding structure
+of pretrained LM models that NP2IO cannot always
+overrule; at least yet.
+
+
+
+**8** **Concluding Remarks**
+We presented a challenging _Insider_ - _Outsider_ classification task, a novel framework necessary for
+addressing burgeoning misinformation and the proliferation of threat narratives on social media. We
+
+compiled a labeled CT5K dataset of conspiracytheoretic posts from multiple social media platforms and presented a competitive NP2IO model
+that outperforms non-trivial baselines. We have
+demonstrated that NP2IO is contextual and transi
+tive via its zero-shot performance, adversarial studies and qualitative studies. We have also shown that
+the CT5K dataset consists of underlying information that is different from existing ABSA datasets.
+Given NP2IO’s ability to identify _Insider_ s and
+_Outsider_ s in a text segment, we can extend the
+inference engine to an entire set of interrelated
+samples in order to extract, visualize and _inter-_
+_pret_ the underlying narrative (see Figure 3). This
+marks a first and significant step in teasing out
+narratives from fragmentary social media records,
+with many of its essential semantic parts – such as,
+_Insider_ / _Outsider_ – tagged in an automated fashion. As extensive evaluations of the NP2IO model
+
+show, our engine has learned the causal phrases
+used to designate the labels. We believe an immediate future work can identify such causal phrases,
+yet another step toward semantic understanding
+of the parts of a narrative. Broadly, work similar
+to this promises to expedite the development of
+models that rely on a computational foundation of
+structured information, and that are better at _ex-_
+_plaining_ causal chains of inference, a particularly
+important feature in the tackling of misinforma
+
+
+4982
+
+
+Figure 3: **An actor-actant subnarrative network constructed from social media posts:** Selected posts from
+anti-vaccination forums such as _qresearch_ on 4chan were decomposed into relationship tuples using a state-ofthe-art relationship extraction pipeline from previous work (Tangherlini et al., 2020) and these relationships are
+overlayed with the inferences from NP2IO. This results in a network where the nodes are the noun phrases and the
+edges are the verb phrases, with each edge representing an extracted relationship from a post. In this network, a
+connected component emerged capturing a major sub-theory in vaccine hesitancy. This highlights NP2IO’s ability
+at inferring both the threat-centric orientation of the narrative space as well as the negotiation dynamics in play,
+thereby providing qualitative insight into how NP2IO may be used in future work to extract large-scale relationship
+networks that are interpretable. The green boxes highlight the noun phrases that have contradictory membership in
+the _Insider_ s and the _Outsider_ s classes as their affiliations are deliberated.
+
+
+
+tion. Indeed, NP2IO’s success has answered the
+question: “Which side are you on?” What remains
+to be synthesized from language is: “Why?”
+
+
+**References**
+
+Paul Bailey. 1999. Searching for storiness: Storygeneration from a reader’s perspective. In _Working_
+_notes of the Narrative Intelligence Symposium_, pages
+157–164.
+
+
+Roja Bandari, Zicong Zhou, Hai Qian, Timothy R.
+Tangherlini, and Vwani P. Roychowdhury. 2017.
+[A resistant strain: Revealing the online grassroots](https://doi.org/10.1109/MC.2017.4041354)
+[rise of the antivaccination movement.](https://doi.org/10.1109/MC.2017.4041354) _Computer_,
+50(11):60–67.
+
+
+Roy Bar-Haim, Indrajit Bhattacharya, Francesco Din[uzzo, Amrita Saha, and Noam Slonim. 2017. Stance](https://aclanthology.org/E17-1024)
+[classification of context-dependent claims. In](https://aclanthology.org/E17-1024) _Pro-_
+_ceedings of the 15th Conference of the European_
+_Chapter of the Association for Computational Lin-_
+_guistics: Volume 1, Long Papers_, pages 251–261,
+Valencia, Spain. Association for Computational Linguistics.
+
+
+Michael Barkun. 2013. _[A Culture of Conspiracy: Apoc-](https://doi.org/doi:10.1525/9780520956520)_
+_[alyptic Visions in Contemporary America](https://doi.org/doi:10.1525/9780520956520)_ . University
+of California Press.
+
+
+John Beatty. 2016. What are narratives good for? _Stud-_
+_ies in History and Philosophy of Science Part C:_
+_Studies in History and Philosophy of Biological and_
+_Biomedical Sciences_, 58:33–40.
+
+
+John Bodner, Wendy Welch, and Ian Brodie. 2020.
+_COVID-19 conspiracy theories: QAnon, 5G, the New_
+_World Order and other viral ideas_ . McFarland.
+
+
+
+[Talha Burki. 2020. The online anti-vaccine movement](https://doi.org/https://doi.org/10.1016/S2589-7500(20)30227-2)
+[in the age of covid-19.](https://doi.org/https://doi.org/10.1016/S2589-7500(20)30227-2) _The Lancet Digital Health_,
+2(10):e504–e505.
+
+
+[Tianqi Chen and Carlos Guestrin. 2016. XGBoost: A](https://doi.org/10.1145/2939672.2939785)
+[scalable tree boosting system. In](https://doi.org/10.1145/2939672.2939785) _Proceedings of the_
+_22nd ACM SIGKDD International Conference on_
+_Knowledge Discovery and Data Mining_, KDD ’16,
+pages 785–794, New York, NY, USA. ACM.
+
+
+David Chong, Erl Lee, Matthew Fan, Pavan Holur,
+Shadi Shahsavari, Timothy Tangherlini, and Vwani
+Roychowdhury. 2021. A real-time platform for contextualized conspiracy theory analysis. In _2021 In-_
+_ternational Conference on Data Mining Workshops_
+_(ICDMW) (forthcoming)_ . IEEE.
+
+
+Carol J Clover. 1986. The long prose form. _Arkiv för_
+_nordisk filologi_, 101:10–39.
+
+
+Junqi Dai, Hang Yan, Tianxiang Sun, Pengfei Liu, and
+[Xipeng Qiu. 2021. Does syntax matter? A strong](https://doi.org/10.18653/v1/2021.naacl-main.146)
+[baseline for aspect-based sentiment analysis with](https://doi.org/10.18653/v1/2021.naacl-main.146)
+[roberta.](https://doi.org/10.18653/v1/2021.naacl-main.146) In _Proceedings of the 2021 Conference_
+_of the North American Chapter of the Association_
+_for Computational Linguistics: Human Language_
+_Technologies, NAACL-HLT 2021, Online, June 6-11,_
+_2021_, pages 1816–1829. Association for Computational Linguistics.
+
+
+Li Dong, Furu Wei, Chuanqi Tan, Duyu Tang, Ming
+[Zhou, and Ke Xu. 2014. Adaptive recursive neural](https://doi.org/10.3115/v1/P14-2009)
+[network for target-dependent Twitter sentiment clas-](https://doi.org/10.3115/v1/P14-2009)
+[sification. In](https://doi.org/10.3115/v1/P14-2009) _Proceedings of the 52nd Annual Meet-_
+_ing of the Association for Computational Linguistics_
+_(Volume 2: Short Papers)_, pages 49–54, Baltimore,
+Maryland. Association for Computational Linguistics.
+
+
+
+4983
+
+
+Jiachen Du, Ruifeng Xu, Yulan He, and Lin Gui. 2017.
+
+[Stance classification with target-specific neural at-](https://doi.org/10.24963/ijcai.2017/557)
+[tention. In](https://doi.org/10.24963/ijcai.2017/557) _Proceedings of the Twenty-Sixth Inter-_
+_national Joint Conference on Artificial Intelligence,_
+_IJCAI-17_, pages 3988–3994.
+
+
+Alan Dundes. 1962. _The Morphology of North Ameri-_
+_can Indian Folktales_ . Indiana University.
+
+
+Lei Gao, Yulong Wang, Tongcun Liu, Jingyu Wang, Lei
+[Zhang, and Jianxin Liao. 2021. Question-driven span](https://ojs.aaai.org/index.php/AAAI/article/view/17523)
+[labeling model for aspect–opinion pair extraction.](https://ojs.aaai.org/index.php/AAAI/article/view/17523)
+_Proceedings of the AAAI Conference on Artificial_
+_Intelligence_, 35(14):12875–12883.
+
+
+Pavan Holur, David Chong, Erl Lee, Matthew Fan,
+Shadi Shahsavari, Tianyi Wang, Timothy R Tangherlini, and Vwani Roychowdhury. 2022. Acl 2022 supplementary data files.
+
+
+Pavan Holur, Shadi Shahsavari, Ehsan Ebrahimzadeh,
+Timothy R. Tangherlini, and Vwani Roychowdhury.
+[2021. Modelling social readers: novel tools for ad-](https://doi.org/10.1098/rsos.210797)
+[dressing reception from online book reviews.](https://doi.org/10.1098/rsos.210797) _Royal_
+_Society Open Science_, 8(12):210797.
+
+
+[Matthew Honnibal and Mark Johnson. 2015. An im-](https://doi.org/10.18653/v1/D15-1162)
+[proved non-monotonic transition system for depen-](https://doi.org/10.18653/v1/D15-1162)
+[dency parsing. In](https://doi.org/10.18653/v1/D15-1162) _Proceedings of the 2015 Con-_
+_ference on Empirical Methods in Natural Language_
+_Processing_, pages 1373–1378, Lisbon, Portugal. Association for Computational Linguistics.
+
+
+Matthew Honnibal and Ines Montani. 2017. spaCy 2:
+Natural language understanding with Bloom embeddings, convolutional neural networks and incremental
+parsing. To appear.
+
+
+Miltiadis Kandias, Vasilis Stavrou, Nick Bozovic, and
+Dimitris Gritzalis. 2013. Proactive insider threat
+detection through social media: The youtube case. In
+_Proceedings of the 12th ACM workshop on Workshop_
+_on privacy in the electronic society_, pages 261–266.
+
+
+[Dilek Küçük and Fazli Can. 2021. Stance Detection: A](https://doi.org/10.1145/3369026)
+[Survey.](https://doi.org/10.1145/3369026) _ACM Computing Surveys_, 53(1):1–37.
+
+
+William Labov and Joshua Waletzky. 1967. Narrative
+analysis. inj. helm (ed.), essays on the verbal and
+visual arts (pp. 12–44).
+
+
+Guillaume Lample and Alexis Conneau. 2019. Crosslingual language model pretraining. _Advances in_
+_Neural Information Processing Systems (NeurIPS)_ .
+
+
+Xin Li, Lidong Bing, Wenxuan Zhang, and Wai Lam.
+[2019. Exploiting BERT for end-to-end aspect-based](https://doi.org/10.18653/v1/D19-5505)
+[sentiment analysis. In](https://doi.org/10.18653/v1/D19-5505) _Proceedings of the 5th Work-_
+_shop on Noisy User-generated Text (W-NUT 2019)_,
+pages 34–41, Hong Kong, China. Association for
+Computational Linguistics.
+
+
+Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer Levy, Mike Lewis,
+Luke Zettlemoyer, and Veselin Stoyanov. 2019.
+[Roberta: A robustly optimized bert pretraining ap-](http://arxiv.org/abs/1907.11692)
+[proach.](http://arxiv.org/abs/1907.11692)
+
+
+
+Edward Ma. 2019. Nlp augmentation.
+https://github.com/makcedward/nlpaug.
+
+
+Tomas Mikolov, Kai Chen, Greg Corrado, and Jeffrey Dean. 2013. Efficient estimation of word
+representations in vector space. _arXiv preprint_
+_arXiv:1301.3781_ .
+
+
+Wilhelm FH Nicolaisen. 1987. The linguistic structure
+of legends. _Perspectives on Contemporary Legend_,
+2(1):61–67.
+
+
+Won Park, Youngin You, and Kyungho Lee. 2018. Detecting potential insider threat: Analyzing insiders’
+sentiment exposed in social media. _Security and_
+_Communication Networks_, 2018.
+
+
+Jeffrey Pennington, Richard Socher, and Christopher D.
+[Manning. 2014. Glove: Global vectors for word](http://www.aclweb.org/anthology/D14-1162)
+[representation.](http://www.aclweb.org/anthology/D14-1162) In _Empirical Methods in Natural_
+_Language Processing (EMNLP)_, pages 1532–1543.
+
+
+Maria Pontiki, Dimitris Galanis, John Pavlopoulos, Harris Papageorgiou, Ion Androutsopoulos, and Suresh
+[Manandhar. 2014. SemEval-2014 task 4: Aspect](https://doi.org/10.3115/v1/S14-2004)
+[based sentiment analysis. In](https://doi.org/10.3115/v1/S14-2004) _Proceedings of the 8th_
+_International Workshop on Semantic Evaluation (Se-_
+_mEval 2014)_, pages 27–35, Dublin, Ireland. Association for Computational Linguistics.
+
+
+Victor Sanh, Lysandre Debut, Julien Chaumond, and
+[Thomas Wolf. 2020. Distilbert, a distilled version of](http://arxiv.org/abs/1910.01108)
+[bert: smaller, faster, cheaper and lighter.](http://arxiv.org/abs/1910.01108)
+
+
+Shadi Shahsavari, Ehsan Ebrahimzadeh, Behnam Shahbazi, Misagh Falahi, Pavan Holur, Roja Bandari,
+Timothy R. Tangherlini, and Vwani Roychowdhury.
+[2020a. An automated pipeline for character and rela-](https://doi.org/10.1145/3394231.3397918)
+[tionship extraction from readers literary book reviews](https://doi.org/10.1145/3394231.3397918)
+[on goodreads.com. In](https://doi.org/10.1145/3394231.3397918) _12th ACM Conference on Web_
+_Science_, WebSci ’20, page 277–286, New York, NY,
+USA. Association for Computing Machinery.
+
+
+Shadi Shahsavari, Pavan Holur, Tianyi Wang, Timothy R Tangherlini, and Vwani Roychowdhury. 2020b.
+Conspiracy in the time of corona: automatic detection
+of emerging covid-19 conspiracy theories in social
+media and the news. _Journal of computational social_
+_science_, 3(2):279–317.
+
+
+Richard Socher, Alex Perelygin, Jean Wu, Jason
+Chuang, Christopher D. Manning, Andrew Ng, and
+[Christopher Potts. 2013. Recursive deep models for](https://www.aclweb.org/anthology/D13-1170)
+[semantic compositionality over a sentiment treebank.](https://www.aclweb.org/anthology/D13-1170)
+In _Proceedings of the 2013 Conference on Empiri-_
+_cal Methods in Natural Language Processing_, pages
+1631–1642, Seattle, Washington, USA. Association
+for Computational Linguistics.
+
+
+Henri Tajfel. 1974. Social identity and intergroup behaviour. _Social science information_, 13(2):65–93.
+
+
+Henri Tajfel, John C Turner, William G Austin, and
+Stephen Worchel. 1979. An integrative theory of intergroup conflict. _Organizational identity: A reader_,
+56(65):9780203505984–16.
+
+
+
+4984
+
+
+Timothy R Tangherlini. 2018. Toward a generative
+model of legend: Pizzas, bridges, vaccines, and
+witches. _Humanities_, 7(1):1.
+
+
+Timothy R Tangherlini, Vwani Roychowdhury, Beth
+Glenn, Catherine M Crespi, Roja Bandari, Akshay
+Wadia, Misagh Falahi, Ehsan Ebrahimzadeh, and
+Roshan Bastani. 2016. [“mommy blogs” and the](https://doi.org/10.2196/publichealth.6586)
+[vaccination exemption narrative: Results from a](https://doi.org/10.2196/publichealth.6586)
+[machine-learning approach for story aggregation on](https://doi.org/10.2196/publichealth.6586)
+[parenting social media sites.](https://doi.org/10.2196/publichealth.6586) _JMIR Public Health_
+_Surveill_, 2(2):e166.
+
+
+Timothy R Tangherlini, Shadi Shahsavari, Behnam
+Shahbazi, Ehsan Ebrahimzadeh, and Vwani Roychowdhury. 2020. An automated pipeline for the discovery of conspiracy and conspiracy theory narrative
+frameworks: Bridgegate, pizzagate and storytelling
+on the web. _PloS one_, 15(6):e0233879.
+
+
+Maxim Tkachenko, Mikhail Malyuk, Nikita
+Shevchenko, Andrey Holmanyuk, and Nikolai
+[Liubimov. 2020-2021. Label Studio: Data labeling](https://github.com/heartexlabs/label-studio)
+[software.](https://github.com/heartexlabs/label-studio) Open source software available from
+https://github.com/heartexlabs/label-studio.
+
+
+George-Alexandru Vlad, Mircea-Adrian Tanase, Cristian Onose, and Dumitru-Clementin Cercel. 2019.
+[Sentence-level propaganda detection in news articles](https://doi.org/10.18653/v1/D19-5022)
+[with transfer learning and BERT-BiLSTM-capsule](https://doi.org/10.18653/v1/D19-5022)
+[model. In](https://doi.org/10.18653/v1/D19-5022) _Proceedings of the Second Workshop on_
+_Natural Language Processing for Internet Freedom:_
+_Censorship, Disinformation, and Propaganda_, pages
+148–154, Hong Kong, China. Association for Computational Linguistics.
+
+
+Marilyn Walker, Pranav Anand, Rob Abbott, and Ricky
+Grant. 2012. Stance Classification using Dialogic
+Properties of Persuasion. In _Proceedings of the 2012_
+_Conference of the North American Chapter of the_
+_Association for Computational Linguistics: Human_
+_Language Technologies_, pages 592–596, Montréal,
+Canada. Association for Computational Linguistics.
+
+
+Xinyu Wang, Yong Jiang, Nguyen Bach, Tao Wang,
+Zhongqiang Huang, Fei Huang, and Kewei Tu. 2021.
+Automated Concatenation of Embeddings for Structured Prediction. In _the Joint Conference of the 59th_
+_Annual Meeting of the Association for Computa-_
+_tional Linguistics and the 11th International Joint_
+_Conference on Natural Language Processing (_ _**ACL-**_
+_**IJCNLP 2021**_ _)_ . Association for Computational Linguistics.
+
+
+Aksel Wester, Lilja Øvrelid, Erik Velldal, and
+Hugo Lewi Hammer. 2016. Threat detection in online discussions. In _Proceedings of the 7th Workshop_
+_on Computational Approaches to Subjectivity, Senti-_
+_ment and Social Media Analysis_, pages 66–71.
+
+
+Kisu Yang, Dongyub Lee, Taesun Whang, Seolhwa Lee,
+[and Heuiseok Lim. 2019. Emotionx-ku: Bert-max](http://arxiv.org/abs/1906.11565)
+[based contextual emotion classifier.](http://arxiv.org/abs/1906.11565)
+
+
+
+Da Yin, Tao Meng, and Kai-Wei Chang. 2020. SentiBERT: A transferable transformer-based architecture
+for compositional sentiment semantics. In _Proceed-_
+_ings of the 58th Conference of the Association for_
+_Computational Linguistics, ACL 2020, Seattle, USA_ .
+
+
+Shaodian Zhang, Lin Qiu, Frank Chen, Weinan Zhang,
+[Yong Yu, and Noémie Elhadad. 2017. We Make](https://doi.org/10.1145/3041021.3055134)
+[Choices We Think are Going to Save Us: Debate](https://doi.org/10.1145/3041021.3055134)
+[and Stance Identification for Online Breast Cancer](https://doi.org/10.1145/3041021.3055134)
+[CAM Discussions. In](https://doi.org/10.1145/3041021.3055134) _Proceedings of the 26th Inter-_
+_national Conference on World Wide Web Companion_,
+WWW ’17 Companion, pages 1073–1081, Republic
+and Canton of Geneva, CHE. International World
+Wide Web Conferences Steering Committee.
+
+# **Appendices**
+
+
+**A** **Data Collection**
+
+
+**A.1** **Automated Crawling of Social Media**
+
+
+A daily data collection method (Chong et al., 2021)
+aggregates heterogeneous data from various social
+media platforms including Reddit, YouTube, 4chan
+and 8kun. Our implementation of this pipeline has
+extracted potentially conspiracy theoretic posts between March 2020 and June 2021 . We select a
+
+subset of these posts that are relevant to vaccine
+hesitancy and that include (a) at least one of the
+words in [’vaccine’, ’mrna’, ’pfizer’, ’moderna’,
+’j&j’, ’johnson’, ’chip’, ’pharm’] and (b) between
+150 to 700 characters. The end-to-end data processing pipeline is _uncased_ .
+
+
+**A.2** **Instructions to AMT Labelers**
+
+
+Amazon Mechanical Turk Labelers were required
+to be at the Masters’ level (exceeding a trust baseline provided by Amazon), were required to speak
+English, and were required to be residing in the
+United States. No personally identifying information was collected. Users were asked to create an
+
+account on a LabelStudio (Tkachenko et al., 20202021) platform to answer a set of 60-80 questions
+or 2 hours worth of questions. Each question included (a) A real anonymized social media post
+with a highlighted sentence, (b) The sentence highlighted in (a) but with the noun phrase of interest
+highlighted. The question prompt read: _Please let_
+_us know whether the entity highlighted in bold AS_
+_PERCEIVED BY THE WRITER is a good/bad or_
+_neutral entity._
+Labelers were reminded several times via popups and other means that the labels were to be
+chosen with respect to the author of the post and
+
+
+
+4985
+
+
+not the labeler’s inherent biases and/or political
+preferences.
+
+
+**A.3** **Ethics statement about the collected**
+
+**social media data**
+
+
+Data was collected using verified research Application Programming Interfaces (API) provided by the
+social media companies for non-commercial study.
+In order to explore data on fringe platforms such as
+4chan and 8kun where standard APIs are not avail
+able, the data was scraped using a Selenium-based
+crawler. All the retrieved samples were ensured
+to be public: the posts could be accessed by anyone on the internet without requiring explicit consent by the authors. Furthermore, we made sure to
+avoid using Personal Identifiable Information (PII)
+such as the user location, time of posting and other
+metadata: indeed, we hid even the specific social
+media platform from which a particular post was
+mined. The extracted text was cleaned by fixing
+capitalization, filtering special characters, adjusting inter-word spacing and correcting punctuation,
+all of which further obfuscated the identity of the
+author of a particular post.
+
+**B** **Supplementary Figures and Tables**
+
+
+
+
+
+
+
+Figure 4: **Convergence plot for NP2IO:** Shown above
+is the training and validation CE loss with optimal parameters (in bold) from Table 4. Model checkpoints are
+in data repository.
+
+
+
+Figure 5: **Histograms that show the distributions of**
+**labels in CT5K** : The plot for “All” represents the full
+3-category label distribution across all entities, for “I”
+the bias toward _Insider_ s is evident, “They” are mostly
+outsiders, and there is no clear consensus label for “Vaccine” and “Herd Immunity”. Microchips are always
+tagged as _Outsider_ s.
+
+
+
+
+
+
+|Parameters Valu|es|
+|---|---|
+|Batch Size<br>32,** 6**|**4**, 128|
+|Trainable Layers<br>0, 1,|**2**, 5|
+|LR<br>1E-7|,** 1E-6**, 1E-5, 1E-4|
+|Pretrained<br>Backbone<br>BER<br>**Disti**<br>RoB<br>RoB|T-base,<br>**lBERT-base**,<br>ERTa-base,<br>ERTa-large|
+
+
+
+Table 4: **A summary of the parameters considered**
+**for finetuning:** NP2IO’s best-performing (by validation
+loss) parameters are in bold.
+
+
+4986
+
+
+|NP|Seed Posts<br>(augmented to 100 posts per NP)|
+|---|---|
+|**microchip**|""I love** microchip**s."", ""I feel that** microchip**s are great."",<br>""**microchip**s are lovely and extremely useful."",<br>""I believe** microchip**s are useful in making phones."",<br>""**Microchip**s have made me a lot of money.""|
+|**government**|""The** government** helps keep me safe."",""The** government**<br>does a good job."",""I think that without the** government**,<br>we would be worse off."",""The** government** keeps us safe."",<br>""A** government** is important to keep our society stable.""|
+|**chemical**|""**Chemical**s save us."",""**Chemical**s can cure cancer."",""I think<br>**chemical**s can help elongate our lives."",""I think** chemical**s<br>are great and helps keep us healthy."",""**Chemical**s can help<br>remove ringworms.""|
+
+
+
+Table 5: **The set of** 5 _**Insider**_ **-oriented core posts per noun phrase (in bold) that have a high skew toward**
+_**Outsider**_ **labels in CT5K:** Each seed post is augmented 20 times to create a set of 100 adversarial posts per phrase.
+NP2IO infers the label for the key noun phrase across these samples. The _adversarial_ recall is presented in Table 3.
+
+
+Figure 6: **Zero-shot** _**Insider**_ **-** _**Outsider**_ **Classification Profile:** This figure shows the consensus vote for noun phrases
+that do not occur in the training set. The x-axis represents the consensus-vote-count and the y-axis, the indices of
+the noun phrases. The consensus vote is computed for each noun phrase `n` by passing all the posts that include `n`
+through NP2IO. Each _Insider_ vote is +1 and _Outsider_ vote is _−_ 1 . The consensus-vote-count is also color-coded for
+better visualization. The zero-shot classification is qualitatively observed to correctly classify popular noun phrases
+such as “reeducation camps”,“depopulation” as _Outsider_ s and “american” and “faith” as _Insider_ s in the subnarrative
+of the anti-vaccination movement.
+
+
+4987
+
+
+","Given a large enough corpus of social media text data, can one automatically distill semantically-labeled narratives (potentially several overlapping ones) that underlie the fragmentary conversational threads?","NP2IO outperforms non-trivial baselines by 20%,
+NP2IO generalizes to unseen noun phrases (zero-shot performance),
+CT5K dataset is distinct from ABSA datasets,
+NP2IO is robust against adversarial attacks with skewed label distributions","F1-macro score,
+Accuracy (Acc.),
+Precision (P),
+Recall (R),
+Zero-shot testing,
+Adversarial experiments,
+Comparison with ABSA models","Identify causal phrases in narratives,
+Extend inference engine to extract and visualize large-scale relationship networks,
+Improve handling of biased embeddings (e.g., 'chemical' bias)",No,,Yes,"Narrative models are represented as a network of characters, their roles, interactions (syuzhet), and time-sequencing (fabula),
+Social narratives construct individual/group identities through distributed discourse",Yes,"Conspiracy theories have signature semantic structures: Insider group, diverse Outsider threats, strategies to counter threats,
+Narratives are negotiated fragmentarily in social media posts,
+Threats and threat agents are contextual and transitive",Yes,"BERT,
+RoBERTa,
+DistilBERT,
+XLM",No,,Yes,"Vaccine-hesitant communities,
+Groups associated with 'depopulation', 'government overreach', 'Satanism'",Yes,Social media users generating conspiracy-theoretic posts,Yes,Text,False
+Conspiracy Narratives in the Protest Movement Against COVID-19 Restrictions in Germany. A Long-term Content Analysis of Telegram Chat Groups.,"[Name(first='Manuel', last='Weigand'), Name(first='Maximilian', last='Weber'), Name(first='Johannes', last='Gruber')]",10.18653/v1/2022.nlpcss-1.8,"From the start of the COVID-19 pandemic in Germany, different groups have been protesting measures implemented by different government bodies in Germany to control the pandemic. It was widely claimed that many of the offline and online protests were driven by conspiracy narratives disseminated through groups and channels on the messenger app Telegram. We investigate this claim by measuring the frequency of conspiracy narratives in messages from open Telegram chat groups of the Querdenken movement, set up to organize protests against COVID-19 restrictions in Germany. We furthermore explore the content of these messages using topic modelling. To this end, we collected 822k text messages sent between April 2020 and May 2022 in 34 chat groups. By fine-tuning a Distilbert model, using self-annotated data, we find that 8.24% of the sent messages contain signs of conspiracy narratives. This number is not static, however, as the share of conspiracy messages grew while the overall number of messages shows a downward trend since its peak at the end of 2020. We further find a mix of known conspiracy narratives make up the topics in our topic model. Our findings suggest that the Querdenken movement is getting smaller over time, but its remaining members focus even more on conspiracy narratives.",https://aclanthology.org/2022.nlpcss-1.8.pdf,2022,acl_anthology,No,No,Yes,Conspiracy Theories,Yes,"We investigate this claim by measuring the frequency of conspiracy narratives in messages from open Telegram chat groups of the Querdenken movement, set up to organize protests against COVID-19 restrictions in Germany.",Yes,"Narrative Classification,
+Topic Modeling",Yes,"Fine-tuning a Distilbert model,
+Topic Modelling",Yes,COVID-19 protests in Germany Telegram messages,No,,"# **Conspiracy Narratives in the Protest Movement Against COVID-19** **Restrictions in Germany. A Long-term Content Analysis of Telegram Chat** **Groups.**
+
+
+
+**Manuel Weigand**
+Goethe University Frankfurt
+
+
+weigand.mnl@gmail.com
+
+
+**Abstract**
+
+
+
+**Maximilian Weber**
+
+Goethe University Frankfurt
+
+
+m.weber@soz.uni-frankfurt.de
+
+
+
+**Johannes Gruber**
+Vrije Universiteit Amsterdam
+
+
+j.b.gruber@vu.nl
+
+
+
+From the start of the COVID-19 pandemic in
+Germany, different groups have been protesting measures implemented by different government bodies in Germany to control the pandemic. It was widely claimed that many of the
+offline and online protests were driven by conspiracy narratives disseminated through groups
+and channels on the messenger app Telegram.
+We investigate this claim by measuring the frequency of conspiracy narratives in messages
+from open Telegram chat groups of the _Quer-_
+_denken_ movement, set up to organize protests
+against COVID-19 restrictions in Germany. We
+furthermore explore the content of these messages using topic modelling. To this end, we
+collected 822k text messages sent between
+April 2020 and May 2022 in 34 chat groups.
+By fine-tuning a Distilbert model, using selfannotated data, we find that 8.24% of the sent
+messages contain signs of conspiracy narratives.
+This number is not static, however, as the share
+of conspiracy messages grew while the overall
+number of messages shows a downward trend
+since its peak at the end of 2020. We further
+find a mix of known conspiracy narratives make
+up the topics in our topic model. Our findings
+suggest that the _Querdenken_ movement is getting smaller over time, but its remaining members focus even more on conspiracy narratives.
+
+
+**1** **Introduction**
+
+
+Conspiracy narratives already existed way before
+the rise of social networks or messenger services
+(see Goertzel, 1994), but their spread was generally modest. In the last decade, however, there
+have been recurrent debates about the rise of con
+spiracy narratives in public and media discourse.
+Two factors in particular are made responsible for
+this: first, social networks have allowed so-called
+alternative news media to emerge, exposing the visibility of the widespread existence of conspiracy
+narratives in society; and second, the COVID-19
+
+
+
+pandemic was a catalyst for misinformation, conspiracy narratives, and populist protest (Boberg
+et al., 2020) over the last two years. Research in the
+past has shown that conspiracy narratives emerge
+more likely when people feel loss of control and
+uncertainty (Goertzel, 1994; Lamberty, 2020). It
+was, therefore, not surprising that conspiracy narratives began to circulate relatively quickly at the
+onset of the COVID-19 pandemic.
+
+
+In Germany, several demonstrations against measures of the government to control the COVID-19
+pandemic began to take place in the middle of 2020.
+In the context of this movement, criticism of government measures often merged with the belief
+that conspiratorial secret organizations ultimately
+determine the actions of governments during the
+pandemic. Over time, the so-called _Querdenken_
+(transl. to ""lateral thinking"") movement emerged
+as the main collective that organised many of the
+protests and connected groups scattered throughout Germany. In particular, the Stuttgart initiative
+_Querdenken 711_ was a role model for many smaller
+initiatives in numerous regions of Germany. At
+the movement’s demonstrations, the prevalence of
+common conspiracy narratives could not be missed.
+As Lamberty et al. (2022) have suggested, the messenger service Telegram played a major role in
+the mobilization and organization of the protests in
+Germany. Furthermore, Simon et al. (2022) suggest
+that the affordances of Telegram as a platform with
+lenient content guidelines led to networks forming around more radical content and the spread
+of conspiracy narratives in Dutch-language public
+Telegram channels discussing developments in the
+COVID-19 pandemic.
+
+
+In this short contribution, we analyze conspiracy
+narratives in Telegram groups in the specific context of the _Querdenken_ movement using supervised
+and unsupervised machine learning approaches for
+a systematic automated content analysis. We attempt to focus on conspiracy narratives, following
+
+
+
+52
+
+
+_Proceedings of the Fifth Workshop on Natural Language Processing and Computational Social Science (NLP+CSS)_, pages 52 - 58
+November 7, 2022 ©2022 Association for Computational Linguistics
+
+
+a relatively basic operationalization: conspiracy
+narratives are beliefs and convictions that attempt
+to interpret historical and contemporary events and
+general societal changes as a conspiracy and/or
+secret plan by a group of powerful actors (Pigden,
+1995; Keeley, 1999). Scholars have pointed out that
+the prevalence of conspiracy narratives could be
+one key indicator of radicalization (Schulze et al.,
+2022), as it could act as ""radicalization catalysts""
+(Lamberty, 2020). We, therefore, address important concerns for social cohesion with our two re
+search questions:
+
+
+**RQ1** : How prevalent are conspiracy narratives
+in Telegram groups that set out to organize
+protest against COVID-19 measures in Germany over time?
+
+
+**RQ2** : What kind of conspiracy narratives make up
+the discussion in these groups?
+
+
+Additionally, we want to know how to automatically detect conspiracy narratives from a technical
+standpoint in order to pave the way for broader
+scope research on the topic.
+
+
+**2** **Data**
+
+
+We use data from _Querdenken_ Telegram chat
+groups that are publicly viewable without joining
+the groups (see Appendix A for selection process
+and list of groups). There are also info channels
+where only selected people can post, while in the
+open chat groups anyone who joins can post. To
+protect the privacy of message senders, we only
+use the time and text of a sent message. We use all
+public chat groups that are advertised on a page of
+the main initiative.
+
+
+**2.1** **Dataset**
+
+
+We crawled over one million messages sent between 29.04.2020 and 29.05.2022. Since we fo
+cus on text messages, messages that contain only
+a video, an image or a link have been removed
+with regular expressions. Resulting in a corpus
+of 821,903 messages that were exchanged in 34
+groups. In the beginning, the _Querdenken_ initiative was primarily active in Southern Germany. In
+Eastern Germany, the _Querdenken_ movement never
+established a foothold as other groups already occupied the same ideological space. However, we
+decided to focus on the _Querdenken_ groups because
+of their supposed appeal on a wider part of society.
+
+
+
+**2.2** **Annotation**
+
+
+We use expert annotations to manually code a sample of the messages. Four experts labeled 4,863
+messages. In addition, to compare intercoder reliability, each expert also labeled the same 100
+randomly selected messages. The _κ_ agreement is
+0.82. The guidelines for annotating differentiates
+between two classes. A message is annotated as
+showing signs of conspiracy (annotated as 1) if it
+clearly indicates signs of conspiracy narratives (see
+Appendix B for details). A message is annotated
+as not showing signs of conspiracy (annotated as
+0), if no terminology related to know conspiracy is
+used or the coder cannot determine if the message
+contains signs of conspiracy narratives.
+
+
+**3** **Methods**
+
+
+The manually labeled data is used to train different supervised machine learning models. The best
+performing model is a fine-tuned distilbert model
+(Sanh et al., 2019). To evaluate the performance of
+the models, we use 5-fold cross-validation. We finetune an already fine-tuned model for German toxic
+comment classification ± ªdistilbert-base-germancased-toxic-commentsº (ML6 Team, 2022). Our
+model classifies the messages in a 2-way classification (message shows signs of conspiracy / does not
+show signs of conspiracy). The average macro F1Score for this model is 0.851 and therefore outperforms other experiments (e.g. SVM, Naive Bayes).
+However, the SVM had an F1-Score of 0.69 for
+the class ""signs of conspiracy"" (compared to 0.76
+for the best performing model) while being less
+computationally expensive. The best performing
+method, the fine-tuned distilbert model is trained
+on all annotated data to get the final model, which
+we use to automatically label the remaining 822k
+
+messages.
+To analyze trends in the data, we perform a frequency analysis. In addition, we analyze the topics
+of messages showing signs of conspiracy by using
+a Structural Topic Model (STM).
+
+
+F1 SD Recall Precision
+
+
+no signs of conspiracy 0.946 0.006 0.966 0.927
+signs of conspiracy 0.757 0.017 0.692 0.837
+
+
+macro avg 0.851 0.012 0.829 0.882
+
+
+Table 1: F1-Scores for the different labels and Macro
+
+F1-Score. Mean and standard deviation over 5 runs with
+
+different test and dev sets
+
+
+
+53
+
+
+Figure 1: Trend curves. Ratio of messages that include signs of conspiracy over time (top graph). Frequency of
+messages sent in the chat groups (bottom left) and frequency of messages containing signs of conspiracy over time
+(bottom right)
+
+
+
+**4** **Temporal analysis**
+
+
+Over a period of more than two years, users in
+the groups we analyzed sent an average of 1080
+messages per day. The number of messages, and
+thus the activity of the groups, had its peak towards
+the end of 2020. Since then and especially the mid
+of 2021, the participation has been on a downward
+trend and the groups of the _Querdenken_ movement
+were no longer active by the same degree. In April
+2022, the monitored groups averaged around 457
+messages per day.
+Concerning the prevalence of conspiracy narratives ( **RQ1** ), our trained model identified 67,698
+messages containing characteristics of conspiracy
+narratives, representing 8.24% of the total corpus.
+Over the two years, the average was 89 messages
+per day. With regard to the distribution of all messages in the corpus, the identified messages containing conspiracy narratives follow a similar trend.
+The prevalence of classified messages is highly correlated with the total message volume, and peaked
+at the end of 2020 and has been on a downward
+
+trend since then, although not quite as steep as the
+
+
+
+**5** **Topic Model**
+
+
+We chose an STM model with 10 topics after following the approach outlined by Roberts et al.
+(2019) to decide on an optimal number of _k_ (see
+Appendix C for details). Table 2 shows the five
+words with the highest _β_ -probability and the highest FREX value (Airoldi and Bischof, 2016) respectively.
+What we find is that most of the topics describe
+different categories of common conspiracy narratives ( **RQ2** ). The most prevalent topics describe
+how the ""Altparteien"" (old parties) would control
+the media to stay in power (T5), how the govern
+
+54
+
+
+
+total message volume. However, we found an increasing uptrend in the proportion of messages containing conspiracy narratives to the whole corpus.
+A look at these numbers confirms this impression:
+The share of messages containing signs of conspiracy narratives is increasing over time and is still
+ongoing. In particular, a further increase has been
+noticeable since February 2022 peaking at values
+around 20%.
+
+
+Table 2: STM Topics
+
+
+**Topic (prevalence)** **Terms**
+
+
+prob germany, government, politics, state, land
+T5 (21.8%) FREX afd, antifa, querdenker, vote, the left
+
+
+prob vaccination, virus, dr, pandemic, vaccine
+T3 (12.8%) FREX study, pcr-test, infection, tested, rki
+
+
+prob people, children, life, fear, world
+T9 (12.8%) FREX humanity, nature, old, suffering, earth
+
+
+prob __, t.me, channel, video, media
+T7 (10.1%) FREX t.me, subscribe, stuttgart basic law protests, kenjebsen, wearemore
+
+
+prob reset, great, money, world, million
+T1 (9.1%) FREX reset, ikb, great, partner, donate
+
+
+prob usa, the, gates, ukraine, russia
+T6 (9.1%) FREX ukraine, russia, putin, biden, nato
+
+
+prob freedom, people, police, resistance, berlin
+T4 (9.1%) FREX stage, restoration, streets, rally, peaceful
+
+
+prob merkel, measures, lockdown, germany, federal government
+T10 (6.9%) FREX chancellor, bundestag, chancellor, angela, autumn
+
+prob telegram, o’clock, compulsory vaccination, flag:German, think
+T8 (5.4%) FREX 1k, news, flag:Austrian, @faktenfriedenfreiheit, web
+
+
+prob health, masks, mask, work, phone
+T2 (2.8%) FREX phone, ministry, social, integration, nothing
+
+~~a~~ Some Unicode characters were replaced (e.g., flag:German used to be a flag emoji)
+b German words were translated, see original version of the table in Appendic C)
+c German compound words have been separated in the translation
+
+
+ment and other elites would conceal how damaging
+the corona vaccine is and use allegedly fake PCRtests to convince people they are sick (T3), and that
+the vaccination campaign and mandatory vaccination laws are illegal and constitute crimes against
+humanity that are supposedly already fought in several court cases (T9). Two topics tie in with a collection of larger global-scale conspiracies narratives
+like the _""Great Reset""_ (T1) and narratives in which
+Bill Gates, Barack Obama, Joe Biden or the _""Deep_
+_State""_ secretly control the pandemic, the vaccine
+as well as other crises in the world (T6). Interestingly, Russia’s war on Ukraine is lumped in here
+and the US or the aforementioned actors are made
+
+responsible for it Ð essentially repeating some of
+the claims spread by Russian news. Consequently,
+T6’s prevalence increases massively, after the start
+of the invasion on 24 February 2022 Ð which is
+the only noteworthy shift in prevalence for a topic
+over time (see details in Appendix C). In the less
+prevalent topics we see narratives talking about the
+obligation of ""awake"" citizens to resist against the
+elites who try to use Corona to control the ""sleeping"" mainstream public of Germany (T4); how the
+measures against the pandemic would secretly constitute a power grab similar to the ""Ermächtigungsgesetz von 1933"" (Enabling Act of 1933) (T10);
+and narratives surrounding the alleged negative and
+harmful impact of masks (T2).
+
+Overall, we are able to directly link most of the
+topics to known conspiracy narratives. The two exceptions are T8 and T7 which inform about future
+protest events and advertise alternative news con
+
+
+tent, often with a reference to censorship and how
+the content was already removed from YouTube or
+archives of TV-stations, allegedly because it contains the truth.
+
+
+**6** **Conclusion**
+
+
+In this paper, we explored conspiracy narratives
+in German Telegram chat groups in which people
+organize protest against restrictions introduced due
+to the COVID-19 pandemic (i.e. the _Querdenken_
+movement). Using an automated machine learning approach, we were able to analyze 822k text
+messages sent in open chat groups. Despite the
+decrease in overall activity in the Telegram groups
+since late 2020, we found an upward trend in the relative share of messages containing conspiracy narratives. The topic model maps the different types
+of conspiracy narratives that we encountered in the
+dataset and that play a role in the group discussions.
+Moreover, the fact that almost all themes can be
+clearly linked to a conspiracy narrative shows the
+robustness of our approach to automatically detect
+conspiracy narratives despite remaining uncertainty
+in the Distilbert model.
+
+Our analysis suggests that the remaining core
+of people in the _Querdenken_ Telegram groups is
+increasingly immersed in conspiracy narratives,
+which appear to become the ideological reference
+point of the movement after many of the measures
+implemented to control the pandemic in Germany
+have been lifted. This might be a meaningful issue
+considering that beliefs in conspiracy narratives are
+a key element of radicalization dynamics (Schulze
+et al., 2022). Moreover, because the affinity for
+conspiracy narratives, or the individual ""conspiracy mentality"", as social psychologists (Imhoff and
+Bruder, 2014; Lamberty et al., 2022) refer to it,
+could lead the remaining core of the movement to
+shift to other topics, which are suitable for conspiracy ideological mobilization. We observe, for
+example, that much news regarding the Russian invasion in Ukraine are made sense of in the groups
+by falling back on previously common narratives
+of international cabals, predominantly from the US,
+who allegedly control crises in the world for their
+own gains. In the future, this increasing detachment from reality could bring with it the potential
+for further disintegration of social cohesion in Ger
+many.
+We acknowledge the limitation that our study
+excluded most protest groups from East Germany,
+
+
+
+55
+
+
+as some of these do not operate under the label of
+the _Querdenken_ movement, even if they share some
+of the same goals and ideologies.
+
+
+**7** **Ethical Considerations**
+
+
+All data we use in the analysis is publicly available through the official Telegram API, or in the
+Telegram App itself, and joining the public groups
+we queried is not necessary to gain access (see Appendix A for details on the groups). We did not
+collect or store any user data, such as telephone
+numbers, names or user handles of group members.
+The metadata for each message consists only of the
+group URL and timestamp. When we show individual messages as examples, we do not disclose
+the time of posting or the group name, to minimize
+any remaining impact on the anonymous authors
+of the message. Therefore, we do not expect any
+negative impact on the authors of the messages we
+examine. We follow the Terms of Service of the
+
+[Telegram API: https://core.telegram.org/api/terms.](https://web.archive.org/web/20220921135339/https://core.telegram.org/api/terms)
+
+
+**References**
+
+
+Edoardo M. Airoldi and Jonathan M. Bischof. 2016.
+
+[Improving and Evaluating Topic Models and Other](https://doi.org/10.1080/01621459.2015.1051182)
+[Models of Text.](https://doi.org/10.1080/01621459.2015.1051182) _Journal of the American Statistical_
+_Association_, 111(516):1381±1403.
+
+
+Svenja Boberg, Thorsten Quandt, Tim Schatto-Eckrodt,
+and Lena Frischlich. 2020. [Pandemic Populism:](http://arxiv.org/abs/2004.02566)
+[Facebook Pages of Alternative News Media and the](http://arxiv.org/abs/2004.02566)
+[Corona Crisis ± A Computational Content Analysis.](http://arxiv.org/abs/2004.02566)
+
+
+[Ted Goertzel. 1994. Belief in conspiracy theories.](http://www.jstor.org/stable/3791630) _Po-_
+_litical Psychology_, 15(4):731±742.
+
+
+Roland Imhoff and Martin Bruder. 2014. [Speaking](https://doi.org/10.1002/per.1930)
+[(un±)truth to power: Conspiracy mentality as a gen-](https://doi.org/10.1002/per.1930)
+[eralised political attitude.](https://doi.org/10.1002/per.1930) _European Journal of Per-_
+_sonality_, 28(1):25±43.
+
+
+[Brian L. Keeley. 1999. Of conspiracy theories.](http://www.jstor.org/stable/2564659) _The_
+_Journal of Philosophy_, 96(3):109±126.
+
+
+Pia Lamberty. 2020. CIA, HIV und BRD GmbH: die
+Psychologie der Verschwörungstheorie. In Jonas
+Knäble, editor, _Verschwörungstheorien im Diskurs_,
+pages 32±56. Beltz Juventa.
+
+
+Pia Lamberty, Josef Holnburger, and Maheba
+Goedeke Tort. 2022. [Zwischen „Spaziergängenª](https://cemas.io/publikationen/zwischen-spaziergaengen-und-aufmaerschen-das-protestpotential-waehrend-der-covid-19-pandemie/)
+[und Aufmärschen: Das Protestpotential während der](https://cemas.io/publikationen/zwischen-spaziergaengen-und-aufmaerschen-das-protestpotential-waehrend-der-covid-19-pandemie/)
+[COVID-19-Pandemie.](https://cemas.io/publikationen/zwischen-spaziergaengen-und-aufmaerschen-das-protestpotential-waehrend-der-covid-19-pandemie/)
+
+
+David Mimno, Hanna Wallach, Edmund Talley, Miriam
+[Leenders, and Andrew McCallum. 2011. Optimizing](https://aclanthology.org/D11-1024.pdf)
+[semantic coherence in topic models.](https://aclanthology.org/D11-1024.pdf) _Proceedings of_
+_the 2011 conference on empirical methods in natural_
+_language processing_, pages 262±272.
+
+
+
+ML6 Team. 2022. [ml6team/distilbert-base-german-](https://huggingface.co/ml6team/distilbert-base-german-cased-toxic-comments)
+[cased-toxic-comments · Hugging Face.](https://huggingface.co/ml6team/distilbert-base-german-cased-toxic-comments)
+
+
+Charles Pigden. 1995. [Popper revisited, or what is](https://doi.org/10.1177/004839319502500101)
+[wrong with conspiracy theories?](https://doi.org/10.1177/004839319502500101) _Philosophy of the_
+_Social Sciences_, 25(1):3±34.
+
+
+Margaret E. Roberts, Brandon M. Stewart, and Dustin
+Tingley. 2019. stm: An _R_ [Package for Structural](https://doi.org/10.18637/jss.v091.i02)
+[Topic Models.](https://doi.org/10.18637/jss.v091.i02) _Journal of Statistical Software_, 91(2).
+
+
+Margaret E. Roberts, Brandon M. Stewart, Dustin
+Tingley, Christopher Lucas, Jetson Leder-Luis,
+Shana Kushner Gadarian, Bethany Albertson, and
+[David G. Rand. 2014. Structural Topic Models for](https://doi.org/10.1111/ajps.12103)
+[Open-Ended Survey Responses.](https://doi.org/10.1111/ajps.12103) _American Journal_
+_of Political Science_, 58(4):1064±1082.
+
+
+Victor Sanh, Lysandre Debut, Julien Chaumond, and
+Thomas Wolf. 2019. Distilbert, a distilled version
+of bert: smaller, faster, cheaper and lighter. _arXiv_
+_preprint arXiv:1910.01108_ .
+
+
+Heidi Schulze, Julian Hohner, Simon Greipl, Maximilian Girgnhuber, Isabell Desta, and Diana Rieger.
+[2022. Far-right conspiracy groups on fringe plat-](https://doi.org/10.1177/13548565221104977)
+[forms: a longitudinal analysis of radicalization dy-](https://doi.org/10.1177/13548565221104977)
+[namics on telegram.](https://doi.org/10.1177/13548565221104977) _Convergence_, 0(0):1±24.
+
+
+Mónika Simon, Kasper Welbers, Anne C. Kroon, and
+[Damian Trilling. 2022. Linked in the dark: A net-](https://doi.org/10.1080/1369118X.2022.2133549)
+[work approach to understanding information flows](https://doi.org/10.1080/1369118X.2022.2133549)
+[within the Dutch Telegramsphere.](https://doi.org/10.1080/1369118X.2022.2133549) _Information, Com-_
+_munication & Society_, pages 1±25.
+
+
+
+56
+
+
+**Appendix**
+
+
+**A** **Data**
+
+
+We use all public chat groups of the local _Quer-_
+_denken_ initiatives linked on the initiative’s direc
+[tory on May 1, 2022 at https://app.querdenken-](http://web.archive.org/web/20220416211609/https://app.querdenken-711.de/initiatives-directory)
+[711.de/initiatives-directory. The groups add parts](http://web.archive.org/web/20220416211609/https://app.querdenken-711.de/initiatives-directory)
+of the local area telephone code to their name.
+The telegram groups are named accordingly:
+""https://t.me/querdenken[number]"". List of the
+groups: 201, 215, 234, 235, 238, 242, 284, 30,
+351, 381, 441, 511, 53, 6051, 615, 6201, 621, 69,
+713, 7141, 7171, 718, 7192, 721, 751, 762, 763,
+775, 791, 793, 8331, 8341, 89m, 911. All publicly
+available Telegram posts were collected via Python
+and the Telethon library, which is built on top of
+the official Telegram API.
+
+
+**B** **Coding Guidelines**
+
+
+Read the guidelines for annotating conspiracy narratives carefully
+
+
+**Definition of conspiracy narratives**
+
+
+  - The belief and conviction in narratives which
+
+try to interpret historical and present events
+and general social change as a conspiracy and
+secret plan of a group of powerful actors.
+
+
+**Guiding Questions**
+
+
+  - There are secret organizations that have great
+influence on political decisions
+
+
+  - Politicians and other leaders are just puppets
+of the powerful actors behind them
+
+
+  - The government uses COVID-19 to monitor
+and control the people
+
+
+  - The government conceals the truth from the
+population
+
+
+  - COVID-19 is orchestrated by (evil) actors
+
+
+**General Rules**
+
+
+  - Do not take links (urls) into account when
+annotating
+
+
+  - Emojis, if easily interpretable, can be taken
+into account
+
+
+  - When annotating use the scheme: contains
+no signs of conspiracy narratives: 0, contains
+signs of conspiracy narratives: 1
+
+
+
+
+  - A message is annotated as **not showing signs**
+**of conspiracy (annotated as 0)**, when at least
+one of the following is true:
+
+
+1. The message contains no signs of conspiracy narratives
+
+2. The message contains terminology related to known topics of conspiracy narratives
+
+3. It cannot be determined, whether the
+message contains signs of conspiracy narratives (e.g., since referenced information is missing or unknown)
+
+
+  - A message is annotated as **showing signs of**
+**conspiracy (annotated as 1)**, when:
+
+
+1. The message clearly indicates signs of
+conspiracy narratives
+
+2. One of the guiding questions applies
+
+
+**Examples**
+
+
+Example messages that should be considered as
+showing signs of conspiracy:
+
+
+  - ""Ist auch nichts anderes als in Deutschland.
+Das ist ein vom Deep State finanzierte Radiosender."" [ _""It’s no different than in Germany._
+_It’s a Deep State-funded radio station.""_ ]
+
+
+  - ""[...] wie der Krieg jetzt mit der Plan demie
+zusammenhängt [...]"" [ _[...] how the war is_
+_now connected with the plandemy [...]_ ]
+
+
+  - ""Die Verbrecher sind erst zufrieden, wenn sie
+ihre Agenda vom Great Reset durchgeknüppelt haben. Dazu muss der Bürger mit aller
+Macht gezwungen werden. Da spielen menschliche Opfer keine Rolle."" [ _""The criminals_
+_will not be satisfied until they have bludgeoned_
+_through their agenda of the Great Reset. The_
+_citizen must be forced to do this with all his_
+_might. Human sacrifice doesn’t matter.""_ ]
+
+
+  - ""[...] das gelingt bei vielen die masse schaut
+auf den virus und der wef kann im hintergrund
+mit hilfe der regierungsmarionetten das system umwandeln wie auch immer das dann
+
+aussehen soll"" [ _""[...] this succeeds with many_
+_the masses look at the virus and the wmf can_
+_transform the system in the background with_
+_the help of the government puppets however_
+_that should look then""_ ]
+
+
+
+57
+
+
+  - ""[...] ihr ziel durch zwangsimpfungen die
+zahl der toten zu maximieren wird in seiner
+
+ganzen skrupellosigkeit erkennbar [...]"" [ _""[...]_
+_their goal of maximizing the number of deaths_
+_through compulsory vaccination becomes ap-_
+_parent in all its unscrupulousness [...]""_ ]
+
+
+  - ""Das interessiert Merkel nicht, auch nicht
+die pharmaindustrie(Bill gates). Die Diktatur hat gestern begonnen, als Merkel sagte,
+nicht geimpfte werden vom Leben ausgeschlossen. Sie hat damit einen Buerger
+Krieg angezettelt."" [ _""Merkel doesn’t care, nei-_
+_ther does the pharma industry(Bill gates). The_
+_dictatorship started yesterday when Merkel_
+_said unvaccinated will be excluded from life._
+_She started a civil war with that.""_ ]
+
+
+**C** **Details on the topic modelling with**
+**STM**
+
+
+As suggested by Roberts et al. (2019), we ran STM
+models with the same parameters ( _α_ = 50 _/k_, _η_ =
+0 _._ 01 ) but varying _k_ from 5 to 15 topics. We then
+calculate semantic coherence (Mimno et al., 2011)
+and exclusivity for each topic in each model. As
+(Roberts et al., 2014) note, high semantic coherence
+can be obtained by choosing a low number for
+_k_ . However, exclusivity usually increases with _k_,
+meaning that one can evaluate an optimal number
+of topics by considering the trade-off between the
+two. In Figure 2, we see that 10 appears to be a
+good choice for a _k_ as there is a local peak for the
+mean semantic coherence while exclusivity still
+grows from 9 to 10 topics.
+
+
+Semantic coherence Exclusivity
+
+
+10.0
+
+
+−100
+
+
+
+Table 3: STM Topics, German original
+
+
+**Topic (prevalence)** **Terms**
+
+
+prob deutschland, regierung, politik, staat, land
+T5 (21.8%) FREX afd, antifa, querdenker, wählen, linken
+
+
+prob impfung, virus, dr, pandemie, impfstoff
+T3 (12.8%) FREX studie, pcr-test, infektion, getestet, rki
+
+
+prob menschen, kinder, leben, angst, welt
+T9 (12.8%) FREX menschlichkeit, natur, alten, leiden, erde
+
+
+prob __, t.me, kanal, video, medien
+T7 (10.1%) FREX t.me, abonnieren, stuttgartgrundgesetzdemos, kenjebsen, wirsindvielmehr
+
+
+prob reset, great, geld, welt, millionen
+T1 (9.1%) FREX reset, ikb, great, partner, spenden
+
+
+prob usa, the, gates, ukraine, russia
+T6 (9.1%) FREX ukraine, russia, putin, biden, nato
+
+
+prob freiheit, menschen, polizei, widerstand, berlin
+T4 (9.1%) FREX bühne, wiederherstellung, straûen, kundgebung, friedlich
+
+
+prob merkel, maûnahmen, lockdown, deutschland, bundesregierung
+T10 (6.9%) FREX kanzlerin, bundestag, bundeskanzlerin, angela, herbst
+
+T8 (5.4%) probFREX telegram, uhr, impfpflicht, flag:German, denkt1k, news, flag:Austrian, @faktenfriedenfreiheit, web
+
+
+prob gesundheit, masken, maske, arbeit, telefon
+T2 (2.8%) FREX telefon, ministerium, soziales, integration, nix
+
+~~a~~ Some Unicode characters were replaced (e.g., flag:German used to be a flag emoji)
+
+
+0.3
+
+
+0.2
+
+
+0.1
+
+
+
+0.0
+
+
+Figure 3: Topic prevalence (mean _γ_ ) over time for T6
+
+
+Table 3 shows the original German version of
+Table 2. Figure 3 displays the change in prevalence
+over time for Topic 6.
+
+
+
+−125
+
+
+−150
+
+
+−175
+
+
+
+9.5
+
+
+9.0
+
+
+8.5
+
+
+5 6 7 8 9 10 11 12 13 14 15 5 6 7 8 9 10 11 12 13 14 15
+
+
+Figure 2: Model diagnostics by number of topics
+
+
+
+58
+
+
+","RQ1: How prevalent are conspiracy narratives in Telegram groups that set out to organize protest against COVID-19 measures in Germany over time?,
+RQ2: What kind of conspiracy narratives make up the discussion in these groups?","8.24% of 822,000 messages contained conspiracy narratives.,
+Conspiracy message prevalence increased over time despite overall message volume declining since late 2020.,
+Topic modeling identified 10 topics, including narratives about 'Great Reset', Bill Gates, PCR test fraud, and pandemic control by elites.,
+Post-February 2022, conspiracy message share peaked at ~20% due to Ukraine war narratives linking to global conspiracies.","5-fold cross-validation with a fine-tuned Distilbert model (macro F1-score: 0.851).,
+Intercoder reliability (κ = 0.82) for human-annotated data (4,863 messages).,
+Comparison of Distilbert (F1: 0.76 for conspiracy class) vs. SVM (F1: 0.69 for conspiracy class).","Broader research on conspiracy narratives in East German protest groups.,
+Investigation into the potential for social cohesion disintegration due to radicalization via conspiracy narratives.,
+Analysis of how conspiracy narratives might shift to other topics post-pandemic.",Yes,"Conspiracy narratives are beliefs and convictions that interpret historical and contemporary events as a conspiracy and/or secret plan by a group of powerful actors (Pigden, 1995; Keeley, 1999).",No,,No,,Yes,Distilbert,Yes,German,No,,Yes,Telegram users in the Querdenken movement organizing protests against German COVID-19 restrictions.,Yes,Text,False
+Identifying Conspiracy Theories News based on Event Relation Graph,"[Name(first='Yuanyuan', last='Lei'), Name(first='Ruihong', last='Huang')]",10.18653/v1/2023.findings-emnlp.656,"Conspiracy theories, as a type of misinformation, are narratives that explains an event or situation in an irrational or malicious manner. While most previous work examined conspiracy theory in social media short texts, limited attention was put on such misinformation in long news documents. In this paper, we aim to identify whether a news article contains conspiracy theories. We observe that a conspiracy story can be made up by mixing uncorrelated events together, or by presenting an unusual distribution of relations between events. Achieving a contextualized understanding of events in a story is essential for detecting conspiracy theories. Thus, we propose to incorporate an event relation graph for each article, in which events are nodes, and four common types of event relations, coreference, temporal, causal, and subevent relations, are considered as edges. Then, we integrate the event relation graph into conspiracy theory identification in two ways: an event-aware language model is developed to augment the basic language model with the knowledge of events and event relations via soft labels; further, a heterogeneous graph attention network is designed to derive a graph embedding based on hard labels. Experiments on a large benchmark dataset show that our approach based on event relation graph improves both precision and recall of conspiracy theory identification, and generalizes well for new unseen media sources.",https://aclanthology.org/2023.findings-emnlp.656.pdf,2023,acl_anthology,No,No,Yes,Conspiracy Theories,Yes,"Conspiracy theories, as a type of misinformation, are narratives that explains an event or situation in an irrational or malicious manner.",Yes,Conspiracy Theory Identification,Yes,"Graph-based Analysis,
+Language Models,
+Heterogeneous Graph Attention Networks",Yes,News Articles,No,,"# **Identifying Conspiracy Theories News based on Event Relation Graph**
+
+**Yuanyuan Lei and Ruihong Huang**
+Department of Computer Science and Engineering
+Texas A&M University, College Station, TX
+{yuanyuan, huangrh}@tamu.edu
+
+
+
+**Abstract**
+
+
+Conspiracy theories, as a type of misinformation, are narratives that explains an event or
+situation in an irrational or malicious manner.
+
+While most previous work examined conspiracy theory in social media short texts, limited
+attention was put on such misinformation in
+long news documents. In this paper, we aim
+to identify whether a news article contains conspiracy theories. We observe that a conspiracy
+story can be made up by mixing uncorrelated
+events together, or by presenting an unusual distribution of relations between events. Achiev
+ing a contextualized understanding of events
+in a story is essential for detecting conspiracy
+theories. Thus, we propose to incorporate an
+event relation graph for each article, in which
+events are nodes, and four common types of
+event relations, coreference, temporal, causal,
+and subevent relations, are considered as edges.
+Then, we integrate the event relation graph into
+conspiracy theory identification in two ways:
+an event-aware language model is developed
+to augment the basic language model with the
+knowledge of events and event relations via
+soft labels; further, a heterogeneous graph attention network is designed to derive a graph
+embedding based on hard labels. Experiments
+on a large benchmark dataset show that our approach based on event relation graph improves
+both precision and recall of conspiracy theory
+identification, and generalizes well for new unseen media sources [1] .
+
+
+**1** **Introduction**
+
+
+Conspiracy theories are narratives that attempt to
+explain the significant social or political events
+as being secretly plotted by malicious groups at
+the expense of an unwitting populations (Douglas
+et al., 2019; Katyal, 2002). A variety of conspiracy
+theories ranging from science-related moon landing to political-related pizzagate (Bleakley, 2021)
+
+
+1 The code and data link: https://github.com/yuanyuanleinlp/conspiracy_theories_emnlp_2023
+
+
+
+are widespread throughout the world (van Prooijen
+and Douglas, 2018). It was estimated that more
+than half of the US population believed in at least
+one conspiracy theory (Oliver and Wood, 2014).
+The widespread presence of conspiracy theories
+can cause harm to both individuals and society as
+a whole (Van der Linden, 2015), such as reducing science acceptance, introducing polarization,
+driving violence, obstructing justice, and bringing
+public health risks (Hughes et al., 2022; Leonard
+and Philippe, 2021) etc. Thus, developing novel
+models to detect conspiracy theories becomes important and necessary.
+
+Most previous work studies conspiracy theories
+primarily from psychology or communication perspectives, often concentrating on social media short
+texts (De Coninck et al., 2021; Mari et al., 2022).
+Few work focused on developing computational
+models to detect conspiracy theories, especially
+for lengthy news articles. However, a substantial
+portion of conspiracy theories originate from long
+documents on news websites (Miani et al., 2021),
+and then disseminate virally through various social
+media channels (Cinelli et al., 2022; Moffitt et al.,
+2021). Therefore, we focus on identifying conspiracy theories within these long documents from
+news websites, and aim to comprehend the underlying narratives. This is a challenging task which not
+only requires semantic understanding (Tangherlini
+et al., 2020) but also necessitates logical reasoning
+(Georgiou et al., 2021).
+
+
+One observation we have for identifying conspiracy theories is that a conspiracy story can be made
+up by mixing unrelated events together. The concept of _“event”_ refers to a specific occurrence or
+action that happens around us, and is essential in
+story telling and narrative understanding (Zhang
+et al., 2021). Conspiracy theories, however, usually
+put typically unrelated events together to fabricate
+a false story. Take the article in Figure 1 as an
+example, the author includes both _""Murder""_ event
+
+
+
+9811
+
+
+_Findings of the Association for Computational Linguistics: EMNLP 2023_, pages 9811–9822
+December 6-10, 2023 ©2023 Association for Computational Linguistics
+
+
+Figure 1: An example of conspiracy theory news article, and its corresponding event relation graph. Events are
+shown in **bold** text. Event relation graph consists of events as nodes, and four types of event-event relations as
+links. A conspiracy story can be made up by mixing unrelated events (nodes) together, or by presenting an irrational
+conspiracy logic between events (event relations).
+
+|Conspiracy|Col2|Col3|Col4|Benign|Col6|Col7|Col8|
+|---|---|---|---|---|---|---|---|
+|~~Singleton~~<br>|~~Temporal~~<br>|~~Causal~~<br>|~~Subevent~~<br>|~~Singleton~~<br>|~~Temporal~~<br>|~~Causal~~<br>|~~Subevent~~<br>|
+|~~**84.61%**~~|~~30.67%~~|~~**24.18%**~~|~~**11.91%**~~|~~76.81%~~|~~**43.25%**~~|~~10.68%~~|~~4.71%~~|
+
+
+
+Table 1: Percentage of singleton events, temporal events, causal events, and subevents in all events reported in
+conspiracy theory news and benign news. The higher ratio values are shown in **bold** . Conspiracy theory articles
+involve less in coreference and temporal relation, but involve more in causal and subevent relation.
+
+
+
+and _""treatment on ventilators""_ event in the arti
+cle, trying to persuade the readers that treatment
+on ventilators is equivalent to murdering, which is
+questionable and immediately against our intuition.
+To effectively guide the model to recognize the irrationality of mixing unrelated events like _""Murder""_
+and _""treatment on ventilators""_ together, maybe by
+drawing upon rich world knowledge already encoded in a underlying language model, we propose
+to encode **events** information for conspiracy theories identification.
+
+
+Furthermore, we observe that conspiracy theories often rely on presenting relations between
+events in an unusual way. Revisiting the example
+in Figure 1, the author intends to convince readers
+through an irrational logical chain of events: people
+were infected with covid-19 and required hospitalization, but died while being treated on ventilators,
+therefore it is the ventilator treatment that led to
+
+their death. However, the normal rational logic is
+that people’s death just co-occurred with treatment
+at the same time, it was not really the treatment
+that caused these deaths. The conspiracy theories
+here presents an invalidate and baseless causal relation by emphasizing the co-occurring temporal
+relation. To sensitize the model to unusual and il
+logical event-event relations, we propose to equip
+the model with **event relations** knowledge. In particular, we incorporate four common types of event
+relations that are crucial for narrative understanding
+and logical reasoning (Wang et al., 2022): _corefer-_
+_ence_ - whether two event mentions designate the
+same occurrence, _temporal_ - chronological orders
+
+
+
+( _before_, _after_ or _overlap_ ) between events, _causal_ causality between events, and _subevent_ - containment from a parent event to a child event.
+
+
+A statistical analysis of events involving the four
+types of event relations is shown in Table 1, based
+on the LOCO conspiracy theories dataset (Miani
+et al., 2021). The numerical analysis confirms the
+following observations: (1) Conspiracy theories
+news involves less in coreference relations, implying that unlike a normal news that reports events
+centered around the main event, a conspiracy theories news tends to be more dispersed in story
+telling. (2) Conspiracy theories exhibit less temporal relations, which means that events reported
+in conspiracy theories news adhere less well to the
+chronological narrative structure than those events
+presented in mainstream benign news. (3) Conspiracy theories news contains more causal relations
+and shows a tendency to ascribe more causality
+to certain events, thereby illustrating reasons or
+potential outcomes. (4) Conspiracy theories news
+employs subevent relations more frequently, elaborates more details, provides verbose explanations,
+and tends to incorporate more circumlocution.
+
+
+Motivated by the above observations and analysis, we propose to incorporate both events and
+event-event relations into conspiracy theories identification. More specifically, an event relation graph
+is constructed for each article, in which events
+are nodes, and the four types of relations between
+events are links. This event relation graph explicitly represents content structures of a story, and
+guides the conspiracy theories detector to engage
+
+
+
+9812
+
+
+its attention on significant events and event-event
+relations. Moreover, this event relation graph is
+incorporated in two ways. Firstly, an event-aware
+language model is trained using the soft labels derived from the event relation graph, thereby integrating the knowledge of events and event-event
+relations into the language model. Secondly, a heterogeneous graph attention network is designed to
+encode the event relation graph based on hard labels, and derive a graph feature vector embedded
+with both events and event relations semantics for
+conspiracy theories identification. Experiments on
+the benchmark dataset LOCO (Miani et al., 2021)
+show that our approach based on event relation
+graph improves both precision and recall of conspiracy theory identification, and generalizes well
+for new unseen media sources. The ablation study
+demonstrates the synergy between soft labels and
+hard labels derived from the event relation graph.
+Our contributions are summarized as follows:
+
+
+  - To the best of our knowledge, our model is
+the first computational model for detecting
+conspiracy theories news articles.
+
+
+  - identify events and event relations as crucial
+information for conspiracy theories detection.
+
+
+  - design a new framework to incorporate event
+relation graph for conspiracy theories detection.
+
+
+**2** **Related Work**
+
+
+**Conspiracy Theory** research till now mainly studied short comments from social media such as Twit
+ter (Wood, 2018; Phillips et al., 2022), Facebook
+(Smith and Graham, 2019), Reddit (Klein et al.,
+2019; Holur et al., 2022), or online discussions
+(Samory and Mitra, 2018; Min, 2021; Mari et al.,
+2022). However, large amount of conspiracy theories are sourced from long narratives on news
+websites and shared through the url link in social
+media platforms (Moffitt et al., 2021). Therefore,
+we aim to develop the model to identify conspiracy
+theories in these news articles.
+
+**Misinformation Detection** was studied for years,
+such as rumor (Meel and Vishwakarma, 2020), propaganda (Da San Martino et al., 2019), or political
+bias (Fan et al., 2019; Lei et al., 2022; Baly et al.,
+2020; Lei and Huang, 2022). Early efforts utilized
+lexical analysis (Wood and Douglas, 2013). With
+the advent of deep learning, neural network-based
+
+
+
+models (Ma et al., 2016; Jin et al., 2017) were
+designed to extract semantic features (Truic˘a and
+Apostol, 2022). Beyond lexical and semantic analysis, our work aims to comprehend the irrational
+logic behind conspiracy theories, from the perspective of events and event relations.
+
+**Fake News Detection** is to verify whether the news
+article is fake or real (Pérez-Rosas et al., 2018; Rubin et al., 2015; Shu et al., 2017; Hassan et al.,
+2017; Thorne and Vlachos, 2018). Although both
+fake news and conspiracy theories involve misinformation, fake news detection focuses on checking
+the existence of false information, while conspiracy theories tend to explain a happened event in a
+malicious way through irrational logic (Avramov
+et al., 2020). In this paper, our attention is concentrated on exploring the intricate narratives and the
+underlying logic of conspiracy theories.
+
+**Event and Event Relations** have been studied for
+
+decades. An event refers to an action or occur
+rence in the real world (Wang et al., 2020). The
+four types of event relations we consider, coreference, temporal, causal and subevent relations, are
+all commonly seen event-event relations in stories.
+However, the four types of event relations were
+previously studied in isolation(Zeng et al., 2020;
+Bethard et al., 2012; Tan et al., 2022; Yao et al.,
+2020). Instead, we consider all the four types of
+event relations to depict event-level discourse structures and achieve contextualized understanding of
+events in a narrative. Our approach is enabled by
+the recently introduced large dataset MAVEN-ERE
+(Wang et al., 2022) that has the four event relations
+annotated within individual articles.
+
+
+**3** **Methodology**
+
+
+In this section, we explain the details of event relation graph construction for each article. The event
+relation graph is incorporated within two steps.
+Firstly, an event-aware language model is developed based on the soft labels, with events and event
+relations knowledge augmented. Secondly, a heterogeneous graph neural network is designed to
+derive a graph embedding based on the hard labels.
+Figure 2 illustrates our proposed methodology.
+
+
+**3.1** **Event Relation Graph Construction**
+
+
+We need to identify events as well as extract the
+four types of event relations to create an event relation graph for each individual article. We will
+describe the training process and the graph con
+
+
+9813
+
+
+Figure 2: An illustration of conspiracy theory news identification based on event relation graph
+
+
+
+struction process separately.
+For **training**, we use the annotations from the
+general-domain MAVEN-ERE dataset (Wang et al.,
+2022). First, we train the event identifier, where the
+Longformer (Beltagy et al., 2020) language model
+is used to encode the entire article and a classification head is built on top of the word embeddings
+to predict whether the word triggers an event or
+not. Next, we train four event relation extractors.
+Following the previous work (Zhang et al., 2021;
+Yao et al., 2020), we form the training event pairs
+in the natural textual order, where the former event
+in the pair is the precedent event mentioned in text.
+Regarding temporal relations [2], we process the _be-_
+_fore_ annotation as follows: keep the label as _before_
+if the annotated event pair aligns with the natural
+textual order, or assign _after_ label to the reverse
+pair if not. The _simultaneous_, _overlap_, _begins-on_,
+_ends-on_, _contains_ annotations are grouped into the
+_overlap_ category in our event relation graph. Regarding causal relations, we assign the _causes_ label
+if the natural textual order is followed, and assign
+_caused by_ label otherwise. Similarly for subevent
+relations, we assign the _contains_ label if the natural
+textual order is followed, and assign _contained by_
+label otherwise. Since the events and four event
+
+relations interact with each other to form a cohesive
+
+narrative representation, we adopt the joint learning
+framework from (Wang et al., 2022) to train these
+components collaboratively.
+During the event relation graph **construction**
+process, the initial step is event identification.
+Given a candidate news article that consists of _N_
+words, the trained event identifier generates the
+predicted probability for each word:
+
+
+_P_ _i_ _[event]_ = ( _p_ _[non]_ _i_ _[−][event]_ _, p_ _i_ _[event]_ ) (1)
+
+
+where _i_ = 1 _, ..., N_, and _p_ _[event]_ _i_ is the probability of
+_i_ -th word being an event. With the events identi
+
+2 Time expressions such as date or time are also annotated
+in temporal relations. However, our event relation graph focuses on events, so we exclude temporal annotations related to
+time expressions and solely retain annotations between events.
+
+
+
+fied, the next step is to extract and classify the four
+types of relations. Given a pair of predicted events
+( _event_ _i_ _, event_ _j_ ), the trained coreference identifier
+predicts the probability for coreference relation as:
+
+
+_P_ _i,j_ _[corefer]_ = ( _p_ _[non]_ _i,j_ _[−][corefer]_ _, p_ _[corefer]_ _i,j_ ) (2)
+
+
+where _p_ _[corefer]_ _i,j_ is the probability of _i_ -th and _j_ -th
+events corefer with each other. We also utilize the
+trained temporal classifier to generate the predicted
+probability for temporal relation:
+
+
+_P_ _i,j_ _[temp]_ = ( _p_ _[non]_ _i,j_ _[−][temp]_ _, p_ _[before]_ _i,j_ _, p_ _[after]_ _i,j_ _, p_ _[overlap]_ _i,j_ ) (3)
+
+
+where _p_ _[non]_ _i,j_ _[−][temp]_ denotes the probability of no temporal relation between the _i_ -th and _j_ -th events, and
+_p_ _[before]_ _i,j_ _, p_ _[after]_ _i,j_ _, p_ _[overlap]_ _i,j_ represents the probability
+of _before_, _after_, _overlap_ relations respectively. Similarly, the trained causal classifier and subevent
+classifier generate the predicted probability as:
+
+
+_P_ _i,j_ _[causal]_ = ( _p_ _[non]_ _i,j_ _[−][causal]_ _, p_ _[cause]_ _i,j_ _, p_ _[caused]_ _i,j_ _[−][by]_ ) (4)
+
+
+_P_ _i,j_ _[subevent]_ = ( _p_ _[non]_ _i,j_ _[−][subevent]_ _, p_ _[contain]_ _i,j_ _, p_ _[contained]_ _i,j_ _[−][by]_ )
+(5)
+Finally, the predicted probabilities in eq(1)-(5) are
+incorporated as the _soft labels_ for events and event
+relations in the constructed event relation graph.
+Accordingly, the _hard label_ for each element is
+obtained by applying the _argmax_ function to the
+predicted probabilities.
+
+
+**3.2** **Event-aware Language Model**
+
+
+To incorporate the constructed event relation graph
+into conspiracy theories identification, we first
+leverage the soft labels to train an event-aware language model, with the knowledge of events and
+event relations augmented. The soft labels provide
+fuzzy probabilistic features and enable the basic
+language model to be aware that nodes represent
+events and links represent event relations.
+Considering the news articles are typically long,
+we utilize Longformer as the basic language model
+
+
+
+9814
+
+
+(Beltagy et al., 2020). In order to capture the contextual information, we add an extra layer of BiLSTM on top (Huang et al., 2015). Given a candidate news article, the embedding of each word is
+represented as ( _w_ 1 _, w_ 2 _, ..., w_ _N_ ).
+To integrate **events knowledge** into the basic
+language model, we construct a two-layer neural
+network on top of the word embeddings to learn
+the probability of each word triggering an event:
+
+
+_Q_ _i_ _[event]_ = ( _q_ _i_ _[non][−][event]_ _, q_ _i_ _[event]_ )
+(6)
+= _softmax_ ( _W_ 2 ( _W_ 1 _w_ _i_ + _b_ 1 ) + _b_ 2 )
+
+
+where _i_ = 1 _, ..., N_, and _Q_ _[event]_ _i_ is the learned probability of the basic language model. The soft label _P_ _i_ _[event]_ generated by the event relation graph
+is referenced as the target learning materials. By
+minimizing the cross entropy loss between the
+learned probability _Q_ _[event]_ _i_ and the target probability _P_ _i_ _[event]_, the events knowledge from the event
+relation graph can be infused into the basic language model:
+
+
+
+knowledge within the event relation graph can be
+augmented into the basic language model:
+
+
+_Loss_ _r_ = _−_ � _P_ _i,j_ _[r]_ [log(] _[Q]_ _[r]_ _i,j_ [)] (12)
+
+_i,j_
+
+
+where _r ∈{corefer, temp, causal, subevent}_
+represents the four event relations.
+The overall loss for training the event-aware language model based on soft labels is computed as
+the sum of the losses for learning each component:
+
+
+_Loss_ _soft_ = _Loss_ _event_ + _Loss_ _corefer_ + _Loss_ _temp_
+(13)
++ _Loss_ _causal_ + _Loss_ _subevent_
+
+
+**3.3** **Event Relation Graph Encoder**
+
+
+We further design a heterogeneous graph neural network to encode the event relation graph using hard
+labels. The encoder updates events embeddings
+with their neighbor events embeddings through interconnected relations, and produces a final graph
+embedding to represent each news article. This
+final article embedding is encoded with both events
+and event relations features, and will be later utilized for conspiracy theories identification.
+To capture the global information of each document and explicitly indicate the connection between each document and its reported events, we
+introduce an extra document node and connect it
+
+to the associated events, as shown in Figure 2. The
+document node is initialized as the embedding of
+the article start token <s>, and the event node is
+initialized as the event word embedding.
+The resulting event relation graph comprises
+nine fine-grained heterogeneous relations: _coref-_
+_erence_, _before_, _after_, _overlap_, _causes_, _caused by_,
+_contains_, _contained by_ relations constructed from
+hard labels, as well as the event-doc relation. The
+eight event-event relations inherently carry semantic meaning, whereas the event-doc relation is a
+standard link without semantics. In order to incor
+porate the semantic meaning of event relations into
+graph propagation, we introduce the relation-aware
+graph attention network. In terms of the event-doc
+relation, we utilize the standard graph attention
+network (Veliˇckovi´c et al., 2018).
+The **relation-aware graph attention network**
+is designed to handle event-event relations, with the
+relations semantics integrated into event nodes embeddings. Given a pair of events ( _event_ _i_ _, event_ _j_ ),
+their relation _r_ _ij_ is initialized as the embedding of
+the corresponding relation word. At the _l_ -th layer,
+the input for _i_ -th event node are output features
+
+
+
+_Loss_ _event_ = _−_
+
+
+
+_N_
+� _P_ _i_ _[event]_ log( _Q_ _i_ _[event]_ ) (7)
+
+
+_i_ =1
+
+
+
+To integrate the **event relations knowledge** into
+the basic language model, we build four different
+neural networks on top of the event pair embedding,
+to learn the predicted probability of the four event
+relations respectively:
+
+
+_Q_ _[corefer]_ _i,j_ = ( _q_ _i,j_ _[non][−][corefer]_ _, q_ _i,j_ _[corefer]_ ) (8)
+
+= _softmax_ ( _W_ 4 ( _W_ 3 ( _e_ _i_ _⊕_ _e_ _j_ ) + _b_ 3 ) + _b_ 4 )
+
+
+_Q_ _[temp]_ _i,j_ = ( _q_ _i,j_ _[non][−][temp]_ _, q_ _i,j_ _[before]_ _, q_ _i,j_ _[after]_ _, q_ _i,j_ _[overlap]_ ) (9)
+
+= _softmax_ ( _W_ 6 ( _W_ 5 ( _e_ _i_ _⊕_ _e_ _j_ ) + _b_ 5 ) + _b_ 6 )
+
+_Q_ _[causal]_ _i,j_ = ( _q_ _i,j_ _[non][−][causal]_ _, q_ _i,j_ _[cause]_ _, q_ _i,j_ _[caused][−][by]_ ) (10)
+
+= _softmax_ ( _W_ 8 ( _W_ 7 ( _e_ _i_ _⊕_ _e_ _j_ ) + _b_ 7 ) + _b_ 8 )
+
+
+_Q_ _[subevent]_ _i,j_ = ( _q_ _i,j_ _[non][−][subevent]_ _, q_ _i,j_ _[contain]_ _, q_ _i,j_ _[contained][−][by]_ )
+
+= _softmax_ ( _W_ 10 ( _W_ 9 ( _e_ _i_ _⊕_ _e_ _j_ ) + _b_ 9 ) + _b_ 10 )
+(11)
+
+
+where ( _e_ _i_ _⊕_ _e_ _j_ ) is the embedding for event pair
+( _event_ _i_ _, event_ _j_ ) by concatenating the two events
+embeddings together. _Q_ _[corefer]_ _i,j_, _Q_ _[temp]_ _i,j_, _Q_ _[causal]_ _i,j_,
+and _Q_ _[subevent]_ _i,j_ are the learned probability of the basic language model for the four event relations. The
+soft labels generated by the event relation graph
+_P_ _i,j_ _[corefer]_, _P_ _i,j_ _[temp]_, _P_ _i,j_ _[causal]_, _P_ _i,j_ _[subevent]_ contain rich
+event relations information, and thus are referenced
+as the target learning materials. By minimizing the
+cross entropy loss between the learned probability and the target probability, the event relations
+
+
+
+9815
+
+
+produced by the previous layer denoted as _h_ [(] _i_ _[l][−]_ [1)] .
+During the propagation process, the relation embedding between _i_ -th and _j_ -th event is updated as:
+
+
+_r_ _ij_ = _W_ _[r]_ [ _h_ [(] _i_ _[l][−]_ [1)] _⊕_ _r_ _ij_ _⊕_ _h_ [(] _j_ _[l][−]_ [1)] ] (14)
+
+
+where _⊕_ represents feature concatenation and _W_ _[r]_
+
+is a trainable matrix. Then the attention weights
+_α_ _ij_ across neighbor event nodes are computed as:
+
+
+_α_ _ij_ = _softmax_ _j_ �( _W_ _[Q]_ _h_ _i_ [(] _[l][−]_ [1)] )( _W_ _[K]_ _r_ _ij_ ) _[T]_ [ �] (15)
+
+
+The output features _h_ [(] _i,r_ _[l]_ [)] [are formulated as:]
+
+
+_h_ [(] _i,r_ _[l]_ [)] [=] � _α_ _ij_ _W_ _[V]_ _r_ _ij_ (16)
+
+_j∈N_ _i,r_
+
+
+where _W_ _[Q]_, _W_ _[K]_, _W_ _[V]_ are trainable matrices, and
+_N_ _i,r_ denotes the neighbor event nodes connecting
+with _i_ -th event via the relation type _r_ . After collecting _h_ [(] _i,r_ _[l]_ [)] [for all relation types] _[ r][ ∈]_ _[R]_ [ =] [ {] _[coreference]_ [,]
+_before_, _after_, _overlap_, _causes_, _caused by_, _contains_,
+_contained by_ }, we aggregate the final output feature
+for _i_ -th event at _l_ -th layer as:
+
+
+_h_ [(] _i_ _[l]_ [)] = � _h_ [(] _i,r_ _[l]_ [)] _[/][|][R][|]_ (17)
+
+_r∈R_
+
+
+The **standard graph attention network** is employed to process event-doc relation, and update the
+document node embedding from connected events
+using the standard attention mechanism. The document node embedding at _l_ -th layer is denoted as
+_d_ [(] _[l]_ [)] . During propagation, the attention weights _α_ _i_
+across the connected events are computed as:
+
+
+_e_ _i_ = _LeakyRelU_ � _a_ _[T]_ [ �] _Wd_ [(] _[l][−]_ [1)] _⊕_ _Wh_ [(] _i_ _[l][−]_ [1)] ��
+
+(18)
+
+exp( _e_ _i_ )
+_α_ _i_ = _softmax_ _i_ ( _e_ _i_ ) = (19)
+~~�~~ _i_ [exp(] _[e]_ _[i]_ [)]
+
+
+where _i ∈_ the events set, _a_ and _W_ are trainable parameters. The final output feature for the document
+node at _l_ -th layer is calculated as:
+
+
+_d_ [(] _[l]_ [)] = � _α_ _i_ _Wh_ [(] _i_ _[l][−]_ [1)] (20)
+
+
+_i_
+
+
+This document node embedding is the final embedding to represent the whole article, which contains
+both the information of graph structure and article
+context. We further build a two-layer classification
+head on top to predict conspiracy theories, and use
+cross-entropy loss for training.
+
+
+
+|Col1|train|dev|test|
+|---|---|---|---|
+|~~conspiracy~~<br>benign|~~39~~<br>43|~~11~~<br>27|~~8~~<br>22|
+
+
+Table 2: Number of media sources in the train / dev /
+
+test set in the media source splitting setting
+
+|Col1|train|dev|test|
+|---|---|---|---|
+|~~conspiracy~~<br>benign|~~4729~~<br>14321|~~1421~~<br>5028|~~1581~~<br>5095|
+
+
+
+Table 3: Number of articles in the train / dev / test set in
+
+the media source splitting and random splitting settings
+
+
+**4** **Experiments**
+
+
+**4.1** **Dataset**
+
+
+Most prior work studied conspiracy theories within
+social media short text. LOCO (Miani et al., 2021)
+is the only publicly available dataset that provides
+conspiracy theories labels for long news documents.
+LOCO consists of a large number of documents collected from 58 conspiracy theories media sources
+and 92 mainstream media sources. LOCO labels
+
+articles from conspiracy theories websites with the
+_conspiracy_ class, and articles from mainstream media sources with the _benign_ class. To prevent the
+conspiracy theory classifier from relying on stylistic features specific to a media source for identifying conspiracy stories, we will create media source
+aware train / dev / test data splits for our experiments as well, in addition to standard random data
+splitting that disregards data sources.
+
+
+**4.2** **Experimental Settings**
+
+
+We design two different settings: 1) identifying conspiracy theories from unseen new media sources,
+or 2) from random media sources:
+
+
+  - **Media Source Splitting** : We split the dataset
+based on media sources, and articles from the
+same media source will not appear in the same
+set: training, development, or testing. This ensures that the model is evaluated on articles
+
+whose sources were not seen during training.
+This setting will remove the inflation in performance that is due to the conspiracy theory
+classifier relying on the shortcuts of media
+sources features to make prediction. Table 2
+and 3 presents the statistics of media sources
+and articles within the train, dev, and test sets.
+
+
+  - **Random Splitting** : We adopt the standard
+
+
+
+9816
+
+
+|MUC|B3|CEAF<br>e|BLANC|
+|---|---|---|---|
+|~~Precision~~<br>~~Recall~~<br>~~F1~~<br><br><br>|~~Precision~~<br>~~Recall~~<br>~~F1~~<br><br><br>|~~Precision~~<br>~~Recall~~<br>~~F1~~<br><br><br>|~~Precision~~<br>~~Recall~~<br>~~F1~~<br><br><br>|
+|~~76.34~~<br>~~83.10~~<br>~~79.57~~|~~97.07~~<br>~~98.32~~<br>~~97.69~~|~~97.79~~<br>~~97.00~~<br>~~97.39~~|~~83.69~~<br>~~92.43~~<br>~~87.54~~|
+
+
+Table 4: Performance of event coreference resolution in the event relation graph
+
+
+
+|Col1|Precision Recall F1|
+|---|---|
+|~~Event Identifer~~|~~87.31~~<br>~~91.81~~<br>~~89.40~~|
+
+
+Table 5: Performance of event identification. Macro
+precision, recall, and F1 are reported.
+
+|Col1|Precision Recall F1|
+|---|---|
+|~~Temporal~~<br>Causal<br>Subevent|~~48.45~~<br>~~46.43~~<br>~~47.04~~<br>58.48<br>54.02<br>56.01<br>53.37<br>42.90<br>46.21|
+
+
+
+Table 6: Performance of temporal, causal, and subevent
+relation tasks in the event relation graph. Macro precision, recall, and F1 are reported.
+
+
+method to split train / dev / test set randomly.
+For fair comparison, we ensure the equal size
+of training and development set, and also evaluate on the same testing set used in the media
+source splitting. In this setting, articles from
+the same media source can appear in both
+training and evaluation sets.
+
+
+**4.3** **Event Relation Graph**
+
+
+The event relation graph is trained on MAVENERE dataset (Wang et al., 2022) which contains
+massive general-domain news articles. The current
+state-of-art model framework (Wang et al., 2022)
+is adopted to learn different components collaboratively. The performance of event identification
+is presented in Table 5. Table 4 shows the results
+of event coreference relation identification. Following the previous work (Cai and Strube, 2010),
+MUC (Vilain et al., 1995), _B_ [3] (Bagga and Baldwin, 1998), _CEAF_ _e_ (Luo, 2005), and BLANC
+(Recasens and Hovy, 2011) are used as evaluation
+metrics. Table 6 shows the performance of other
+components in event relation graph, including temporal, causal, and subevent relation tasks. The
+standard macro-average precision, recall, and F1
+score are used for evaluation.
+
+
+**4.4** **Baselines**
+
+
+Our paper presents the first attempt to identify conspiracy theories in news articles. There are few
+established methods available for comparison. We
+experimented the following systems as baselines:
+
+
+
+
+  - **all-conspiracy** : a naive baseline that categorizes all the documents into _conspiracy_ class
+
+
+  - **chatgpt** : where we designed an instruction
+prompt (A.1) that allows the large language
+model ChatGPT to automatically generate predicted labels for each news article within the
+
+same test set.
+
+
+  - **longformer** : where we use the same language
+model Longformer (Beltagy et al., 2020) and
+add an extra layer of Bi-LSTM on top. The
+embedding of the article start token is used as
+article embedding. The same two-layer classification head is built on top of the article embedding to predict conspiracy theories. This
+baseline model is equivalent to our developed
+model without event relation graph.
+
+
+  - **longformer + additional features** : where we
+concatenate the soft labels eq (1)-(5) as additional features into the article embedding.
+
+
+**4.5** **Experimental Results**
+
+
+Table 7 reports the experimental results of conspiracy theories news identification under two different
+splitting settings. Precision, recall, and F1 score of
+the _conspiracy_ class is shown.
+In the media source splitting setting, we can
+see that incorporating the event relation graph substantially boosts precision by 3.59% and recall by
+5.13%, compared to the longformer baseline. This
+suggests that the event relation graph encapsulates
+events and their logical interrelations, thereby has
+the ability to understand complex narratives of conspiracy theories. These improvements also show
+that our proposed method can generalize well for
+unseen new media sources.
+
+In the random splitting setting, incorporating the
+event relation graph can also bring significant improvement to both precision and recall. The results
+indicate the effectiveness of the event relation graph
+method under either the hard and easy setting, with
+the F1 score increased by 4.22% to 4.47%. Unsurprising, the system performance in this setting
+is overall higher than in the media source splitting, probably due to the inflation caused by the
+
+
+
+9817
+
+
+|Data Split Settings|Media Source Splitting|Random Splitting|
+|---|---|---|
+||~~Precision~~<br>~~Recall~~<br>~~F1~~|~~Precision~~<br>~~Recall~~<br>~~F1~~|
+|~~Baseline Model~~<br>all-conspiracy<br>chatgpt<br>longformer<br>longformer + additional features<br>|23.68<br>100.00<br>38.30<br>64.77<br>28.84<br>39.91<br>79.53<br>69.32<br>74.08<br>79.37<br>70.33<br>74.58|23.68<br>100.00<br>38.30<br>64.77<br>28.84<br>39.91<br>86.59<br>75.14<br>80.46<br>86.83<br>75.90<br>80.99|
+|~~Event Relation Graph~~<br>+ event-aware language model (soft label)<br>+ event relation graph encoder (hard label)<br>+ both (full model)|82.30<br>70.27<br>75.81<br>79.92<br>73.24<br>76.44<br>**83.12**<br>**74.45**<br>**78.55**|89.73<br>77.92<br>83.41<br>88.88<br>80.39<br>84.42<br>**89.22**<br>**80.58**<br>**84.68**|
+
+
+Table 7: Experimental results of conspiracy theories news identification based on event relation graph under two
+different splitting settings. Precision, Recall, and F1 of the positive class are shown. The model with the best
+performance is **bold** .
+
+
+
+classifier taking the shortcut of using media source
+recognition for conspiracy theory detection.
+The event relation graph method outperforms
+the simple feature concatenation baseline. We observe that compared with the longformer baseline,
+incorporating probabilistic vectors as additional
+features (longformer + additional features) only
+slightly improve the performance. This demonstrate that developing more sophisticated methods
+to fully leverage the information embedded within
+the event relation graph is necessary.
+The method based on event relation graph performs significantly better than the chatgpt. Comparing our full model to the chatgpt baseline, there
+is still a large gap in performance, especially the
+recall. We observe that chatgpt chooses _conspiracy_
+label mostly when false narratives are explicit. On
+the contrary, the event relation graph concentrates
+on logical reasoning, thus can better deal with implicit cases and yields higher recall.
+
+
+**4.6** **Ablation Study**
+
+
+The ablation study is also shown in Table 7. The
+event relation graph encoder based on hard labels
+contributes to enhancing recall, while the eventaware language model leveraging soft labels contributes to improving precision. It is probably because that the hard labels employ the four event
+relations in a relatively aggressive manner, by constructing the corresponding relation regardless of
+the confidence level. This enables the encoder to
+fully exploit the intrinsic information embedded
+in the event relation graph, thereby enhancing recall. On the contrary, the soft labels incorporate
+predicted probabilities of the event relation graph,
+allowing the model to learn from confidence levels
+
+
+
+|Col1|Precision Recall F1|
+|---|---|
+|~~baseline~~<br>full model<br>- event identify<br>- coreference<br>- temporal<br>- causal<br>- subevent|~~79.53~~<br>~~69.32~~<br>~~74.08~~<br>**83.12**<br>**74.45**<br>**78.55**<br>82.75<br>73.12<br>77.64<br>82.64<br>72.87<br>77.45<br>80.15<br>73.06<br>76.44<br>82.49<br>72.11<br>76.95<br>82.11<br>72.30<br>76.89|
+
+
+Table 8: Effect of removing each of the event relation
+graph components: event identification, coreference,
+temporal, causal, and subevent relations.
+
+
+and ultimately improving precision. The utilization
+of soft labels and hard labels are complementary
+with each other. Incorporating both soft labels and
+hard labels (the full model) exhibit the best perfor
+mance.
+
+
+**4.7** **Effect of Different Event Relations**
+
+
+We further study the effect of the different event
+relations in the event relation graph. Table 8 shows
+the experimental results of removing each type of
+event relations from the full model. The results
+
+show that removing any type of event relations
+leads to a performance drop, reducing both precision and recall. Therefore, each type of event
+relations plays an essential role in constructing a
+comprehensive content structure, and is crucial for
+identifying conspiracy theories news. Further, the
+experimental results demonstrate the importance
+of different event relations: removing temporal,
+causal, or subevent relations leads to larger performance decrease.
+
+
+
+9818
+
+
+Figure 3: An example of our method succeed in identifying conspiracy theory news, and a failing example. Events
+are shown in **bold** text. The solid arrows in the event relation graphs represent the successfully extracted event
+relations, and the dashed arrow means the missing event relation.
+
+
+
+**4.8** **Analysis and Discussion**
+
+
+Figure 3 shows an example where our method succeeds in solving false negative. By identifying the
+events and extracting the relations between events,
+the model is aware of the author’s intention to at
+tribute a causal relation between _taking vaccination_
+and _autism_ . At the same time, the model is encoded
+
+with the information that the _reaction_ event consist
+ing of _disease_, _pain_, and _inability_ happened after
+_taking vaccination_, which may not be adequate to
+reach a causal conclusion. The model not only
+learns the overall distribution of the four event relations, but is also aware of the specific relations
+described within a story, thereby can better comprehend complex narratives.
+An example where our method fails to identify
+conspiracy theories is also shown in Figure 3. The
+author intends to imply a causal relation between
+_COVID-19 pandemic_ and _emergent 5G technology_ .
+However, the text expresses this relation in a very
+implicit way by using the phrase _has something to_
+_do with_ . The event relation graph algorithm fails
+to recognize this implicitly stated causal relation
+and leads to a false negative error. In order to further improve the performance of conspiracy theory
+identification, it is necessary to improve event relation graph construction and better extract implicit
+event relations.
+
+
+**5** **Conclusion**
+
+
+This paper presents the first attempt to identify conspiracy theories in news articles. Following our observation that conspiracy theories can be fabricated
+by mixing uncorrelated events together or presenting an unusual distribution of relations between
+events, we construct an event relation graph for
+each article and incorporate the graph structure for
+conspiracy theories identification. Experimental re
+
+
+sults demonstrate the effectiveness of our approach.
+Future work needs to develop more sophisticated
+methods to improve event relation graph construction and better extract implicit event relations.
+
+
+**Limitations**
+
+
+Our paper proposes to build an event relation graph
+for each article to facilitate conspiracy theories understanding. The analysis shows that the current
+event relation graph algorithm has the ability to
+extract event relations for most easy cases, but can
+fail in recognizing implicitly stated relations. In
+order to further improve the performance of conspiracy theories identification, it is necessary to
+develop more sophisticated methods to enhance the
+performance of event relation graph.
+
+
+**Ethics Statement**
+
+
+This paper aims to identify conspiracy theories,
+which is a specific form of misinformation. Detecting such misinformation can promote critical
+thinking, mitigate misinformation, preserve trust,
+and safeguard societal well-being. The conspiracy
+theories dataset is used only for academic research
+purpose. The release of conspiracy theories dataset
+and code should only be utilized for the purpose of
+combating misinformation, and should not be used
+for spreading misinformation.
+
+
+**Acknowledgements**
+
+
+We would like to thank the anonymous reviewers
+for their valuable feedback and input. We gratefully acknowledge support from National Science
+Foundation via the awards IIS-1942918 and IIS
+2127746. Portions of this research were conducted
+
+with the advanced computing resources provided
+by Texas A&M High-Performance Research Computing.
+
+
+
+9819
+
+
+**References**
+
+
+Kiril Avramov, Vasily Gatov, and Ilya Yablokov. 2020.
+Conspiracy theories and fake news. In _Routledge_
+_Handbook of Conspiracy Theories_ . Routledge.
+
+
+Amit Bagga and Breck Baldwin. 1998. Entity-based
+cross-document coreferencing using the vector space
+model. In _COLING 1998 Volume 1: The 17th Inter-_
+_national Conference on Computational Linguistics_ .
+
+
+Ramy Baly, Giovanni Da San Martino, James Glass,
+[and Preslav Nakov. 2020. We can detect your bias:](https://doi.org/10.18653/v1/2020.emnlp-main.404)
+[Predicting the political ideology of news articles. In](https://doi.org/10.18653/v1/2020.emnlp-main.404)
+_Proceedings of the 2020 Conference on Empirical_
+_Methods in Natural Language Processing (EMNLP)_,
+pages 4982–4991, Online. Association for Computational Linguistics.
+
+
+Iz Beltagy, Matthew E. Peters, and Arman Cohan. 2020.
+
+[Longformer: The long-document transformer.](http://arxiv.org/abs/2004.05150)
+
+
+Steven Bethard, Oleksandr Kolomiyets, and Marie[Francine Moens. 2012. Annotating story timelines](http://www.lrec-conf.org/proceedings/lrec2012/pdf/371_Paper.pdf)
+[as temporal dependency structures.](http://www.lrec-conf.org/proceedings/lrec2012/pdf/371_Paper.pdf) In _Proceed-_
+_ings of the Eighth International Conference on Lan-_
+_guage Resources and Evaluation (LREC’12)_, pages
+2721–2726, Istanbul, Turkey. European Language
+Resources Association (ELRA).
+
+
+Paul Bleakley. 2021. Panic, pizza and mainstreaming
+the alt-right: A social media analysis of pizzagate and
+the rise of the qanon conspiracy. _Current Sociology_,
+page 00113921211034896.
+
+
+[Jie Cai and Michael Strube. 2010. Evaluation metrics](https://aclanthology.org/W10-4305)
+[for end-to-end coreference resolution systems. In](https://aclanthology.org/W10-4305)
+_Proceedings of the SIGDIAL 2010 Conference_, pages
+28–36, Tokyo, Japan. Association for Computational
+Linguistics.
+
+
+Matteo Cinelli, Gabriele Etta, Michele Avalle, Alessandro Quattrociocchi, Niccolò Di Marco, Carlo Valensise, Alessandro Galeazzi, and Walter Quattrociocchi.
+2022. Conspiracy theories and social media platforms. _Current Opinion in Psychology_, page 101407.
+
+
+Giovanni Da San Martino, Seunghak Yu, Alberto
+Barrón-Cedeño, Rostislav Petrov, and Preslav Nakov.
+[2019. Fine-grained analysis of propaganda in news](https://doi.org/10.18653/v1/D19-1565)
+[article. In](https://doi.org/10.18653/v1/D19-1565) _Proceedings of the 2019 Conference on_
+_Empirical Methods in Natural Language Processing_
+_and the 9th International Joint Conference on Natu-_
+_ral Language Processing (EMNLP-IJCNLP)_, pages
+5636–5646, Hong Kong, China. Association for Computational Linguistics.
+
+
+David De Coninck, Thomas Frissen, Koen Matthijs,
+Leen d’Haenens, Grégoire Lits, Olivier ChampagnePoirier, Marie-Eve Carignan, Marc D David, Nathalie
+Pignard-Cheynel, Sébastien Salerno, et al. 2021. Beliefs in conspiracy theories and misinformation about
+covid-19: Comparative perspectives on the role of
+anxiety, depression and exposure to and trust in information sources. _Frontiers in psychology_, 12:646394.
+
+
+
+Karen M Douglas, Joseph E Uscinski, Robbie M Sutton, Aleksandra Cichocka, Turkay Nefes, Chee Siang
+Ang, and Farzin Deravi. 2019. Understanding conspiracy theories. _Political psychology_, 40:3–35.
+
+
+Lisa Fan, Marshall White, Eva Sharma, Ruisi Su, Prafulla Kumar Choubey, Ruihong Huang, and Lu Wang.
+[2019. In plain sight: Media bias through the lens of](https://doi.org/10.18653/v1/D19-1664)
+[factual reporting. In](https://doi.org/10.18653/v1/D19-1664) _Proceedings of the 2019 Confer-_
+_ence on Empirical Methods in Natural Language Pro-_
+_cessing and the 9th International Joint Conference_
+_on Natural Language Processing (EMNLP-IJCNLP)_,
+pages 6343–6349, Hong Kong, China. Association
+for Computational Linguistics.
+
+
+Neophytos Georgiou, Paul Delfabbro, and Ryan Balzan.
+2021. Conspiracy theory beliefs, scientific reasoning
+and the analytical thinking paradox. _Applied Cogni-_
+_tive Psychology_, 35(6):1523–1534.
+
+
+Naeemul Hassan, Fatma Arslan, Chengkai Li, and Mark
+Tremayne. 2017. Toward automated fact-checking:
+Detecting check-worthy factual claims by claimbuster. In _Proceedings of the 23rd ACM SIGKDD_
+_international conference on knowledge discovery and_
+_data mining_, pages 1803–1812.
+
+
+Pavan Holur, Tianyi Wang, Shadi Shahsavari, Timothy Tangherlini, and Vwani Roychowdhury. 2022.
+[Which side are you on? insider-outsider classification](https://doi.org/10.18653/v1/2022.acl-long.341)
+[in conspiracy-theoretic social media. In](https://doi.org/10.18653/v1/2022.acl-long.341) _Proceedings_
+_of the 60th Annual Meeting of the Association for_
+_Computational Linguistics (Volume 1: Long Papers)_,
+pages 4975–4987, Dublin, Ireland. Association for
+Computational Linguistics.
+
+
+[Zhiheng Huang, Wei Xu, and Kai Yu. 2015. Bidirec-](http://arxiv.org/abs/1508.01991)
+[tional lstm-crf models for sequence tagging.](http://arxiv.org/abs/1508.01991)
+
+
+J.P. Hughes, A. Efstratiou, S.R. Komer, L.A. Baxter,
+[M. Vasiljevic, and A.C. Leite. 2022. The impact of](https://doi.org/10.1371/journal.pone.0263716)
+[risk perceptions and belief in conspiracy theories on](https://doi.org/10.1371/journal.pone.0263716)
+[covid-19 pandemic-related behaviours.](https://doi.org/10.1371/journal.pone.0263716) _PLoS One_,
+17:e0263716.
+
+
+Zhiwei Jin, Juan Cao, Han Guo, Yongdong Zhang, and
+Jiebo Luo. 2017. Multimodal fusion with recurrent
+neural networks for rumor detection on microblogs.
+In _Proceedings of the 25th ACM international con-_
+_ference on Multimedia_, pages 795–816.
+
+
+Neal Kumar Katyal. 2002. Conspiracy theory. _Yale Lj_,
+112:1307.
+
+
+[C. Klein, P. Clutton, and A. G. Dunn. 2019. Pathways](https://doi.org/10.1371/journal.pone.0225098)
+[to conspiracy: The social and linguistic precursors](https://doi.org/10.1371/journal.pone.0225098)
+[of involvement in reddit’s conspiracy theory forum.](https://doi.org/10.1371/journal.pone.0225098)
+_PLOS ONE_, 14(11):e0225098.
+
+
+[Yuanyuan Lei and Ruihong Huang. 2022. Few-shot](https://doi.org/10.18653/v1/2022.findings-emnlp.409)
+[(dis)agreement identification in online discussions](https://doi.org/10.18653/v1/2022.findings-emnlp.409)
+[with regularized and augmented meta-learning. In](https://doi.org/10.18653/v1/2022.findings-emnlp.409)
+_Findings of the Association for Computational Lin-_
+_guistics: EMNLP 2022_, pages 5581–5593, Abu
+Dhabi, United Arab Emirates. Association for Computational Linguistics.
+
+
+
+9820
+
+
+Yuanyuan Lei, Ruihong Huang, Lu Wang, and Nick
+[Beauchamp. 2022. Sentence-level media bias analy-](https://aclanthology.org/2022.emnlp-main.682)
+[sis informed by discourse structures. In](https://aclanthology.org/2022.emnlp-main.682) _Proceedings_
+_of the 2022 Conference on Empirical Methods in_
+_Natural Language Processing_, pages 10040–10050,
+Abu Dhabi, United Arab Emirates. Association for
+Computational Linguistics.
+
+
+Marie-Jeanne Leonard and Frederick L. Philippe. 2021.
+
+Conspiracy theories: [A public health concern](https://doi.org/10.3389/fpsyg.2021.682931)
+[and how to address it.](https://doi.org/10.3389/fpsyg.2021.682931) _Frontiers in Psychology_,
+12:682931.
+
+
+[Xiaoqiang Luo. 2005. On coreference resolution perfor-](https://aclanthology.org/H05-1004)
+[mance metrics. In](https://aclanthology.org/H05-1004) _Proceedings of Human Language_
+_Technology Conference and Conference on Empiri-_
+_cal Methods in Natural Language Processing_, pages
+25–32, Vancouver, British Columbia, Canada. Association for Computational Linguistics.
+
+
+Jing Ma, Wei Gao, Prasenjit Mitra, Sejeong Kwon,
+Bernard J Jansen, Kam-Fai Wong, and Meeyoung
+Cha. 2016. Detecting rumors from microblogs with
+recurrent neural networks. _AAAI Press_ .
+
+
+Silvia Mari, Homero Gil de Zuniga, Ahmet Suerdem,
+Katja Hanke, Gary Brown, Roosevelt Vilar, Diana
+Boer, and Michal Bilewicz. 2022. Conspiracy theories and institutional trust: examining the role of
+uncertainty avoidance and active social media use.
+_Political Psychology_, 43(2):277–296.
+
+
+Priyanka Meel and Dinesh Kumar Vishwakarma. 2020.
+Fake news, rumor, information pollution in social media and web: A contemporary survey of state-of-thearts, challenges and opportunities. _Expert Systems_
+_with Applications_, 153:112986.
+
+
+Alessandro Miani, Thomas Hills, and Adrian Bangerter.
+2021. Loco: The 88-million-word language of conspiracy corpus. _Behavior research methods_, pages
+1–24.
+
+
+Seong Jae Min. 2021. Who believes in conspiracy theories? network diversity, political discussion, and conservative conspiracy theories on social media. _Amer-_
+_ican Politics Research_, 49(5):415–427.
+
+
+[J. D. Moffitt, C. King, and K. M. Carley. 2021. Hunting](https://doi.org/10.1177/20563051211043212)
+[conspiracy theories during the covid-19 pandemic.](https://doi.org/10.1177/20563051211043212)
+_Social Media + Society_, 7(3).
+
+
+J Eric Oliver and Thomas J Wood. 2014. Conspiracy
+theories and the paranoid style (s) of mass opinion.
+_American journal of political science_, 58(4):952–
+966.
+
+
+Verónica Pérez-Rosas, Bennett Kleinberg, Alexandra
+[Lefevre, and Rada Mihalcea. 2018. Automatic de-](https://aclanthology.org/C18-1287)
+[tection of fake news. In](https://aclanthology.org/C18-1287) _Proceedings of the 27th_
+_International Conference on Computational Linguis-_
+_tics_, pages 3391–3401, Santa Fe, New Mexico, USA.
+Association for Computational Linguistics.
+
+
+
+Samantha C Phillips, Lynnette Hui Xian Ng, and Kathleen M Carley. 2022. Hoaxes and hidden agendas:
+A twitter conspiracy theory dataset: Data paper. In
+_Companion Proceedings of the Web Conference 2022_,
+pages 876–880.
+
+
+Marta Recasens and Eduard Hovy. 2011. Blanc: Implementing the rand index for coreference evaluation.
+_Natural language engineering_, 17(4):485–510.
+
+
+Victoria L Rubin, Yimin Chen, and Nadia K Conroy.
+2015. Deception detection for news: three types of
+fakes. _Proceedings of the Association for Informa-_
+_tion Science and Technology_, 52(1):1–4.
+
+
+Mattia Samory and Tanushree Mitra. 2018. ’the government spies using our webcams’ the language of
+conspiracy theories in online discussions. _Proceed-_
+_ings of the ACM on Human-Computer Interaction_,
+2(CSCW):1–24.
+
+
+Kai Shu, Amy Sliva, Suhang Wang, Jiliang Tang, and
+[Huan Liu. 2017. Fake news detection on social me-](http://arxiv.org/abs/1708.01967)
+[dia: A data mining perspective.](http://arxiv.org/abs/1708.01967)
+
+
+N. Smith and T. Graham. 2019. [Mapping the anti-](https://doi.org/10.1080/1369118X.2017.1418406)
+[vaccination movement on facebook.](https://doi.org/10.1080/1369118X.2017.1418406) _Information,_
+_Communication & Society_, 22(9):1310–1327.
+
+
+Fiona Anting Tan, Ali Hürriyeto˘glu, Tommaso Caselli,
+Nelleke Oostdijk, Tadashi Nomoto, Hansi Hettiarachchi, Iqra Ameer, Onur Uca, Farhana Ferdousi
+[Liza, and Tiancheng Hu. 2022. The causal news cor-](https://aclanthology.org/2022.lrec-1.246)
+[pus: Annotating causal relations in event sentences](https://aclanthology.org/2022.lrec-1.246)
+[from news. In](https://aclanthology.org/2022.lrec-1.246) _Proceedings of the Thirteenth Lan-_
+_guage Resources and Evaluation Conference_, pages
+2298–2310, Marseille, France. European Language
+Resources Association.
+
+
+Timothy R Tangherlini, Shadi Shahsavari, Behnam
+Shahbazi, Ehsan Ebrahimzadeh, and Vwani Roychowdhury. 2020. An automated pipeline for the discovery of conspiracy and conspiracy theory narrative
+frameworks: Bridgegate, pizzagate and storytelling
+on the web. _PloS one_, 15(6):e0233879.
+
+
+[James Thorne and Andreas Vlachos. 2018. Automated](https://aclanthology.org/C18-1283)
+[fact checking: Task formulations, methods and fu-](https://aclanthology.org/C18-1283)
+[ture directions. In](https://aclanthology.org/C18-1283) _Proceedings of the 27th Inter-_
+_national Conference on Computational Linguistics_,
+pages 3346–3359, Santa Fe, New Mexico, USA. Association for Computational Linguistics.
+
+
+Ciprian-Octavian Truic˘a and Elena-Simona Apostol.
+2022. Misrobærta: Transformers versus misinformation. _Mathematics_, 10(4):569.
+
+
+Sander Van der Linden. 2015. The conspiracy-effect:
+Exposure to conspiracy theories (about global warming) decreases pro-social behavior and science acceptance. _Personality and Individual Differences_,
+87:171–173.
+
+
+Jan-Willem van Prooijen and Karen M. Douglas. 2018.
+Belief in conspiracy theories: Basic principles of
+an emerging research domain. _European Journal of_
+_Social Psychology_, 48:897–908.
+
+
+
+9821
+
+
+Petar Veliˇckovi´c, Guillem Cucurull, Arantxa Casanova,
+Adriana Romero, Pietro Liò, and Yoshua Bengio.
+[2018. Graph attention networks.](http://arxiv.org/abs/1710.10903)
+
+
+Marc Vilain, John Burger, John Aberdeen, Dennis
+[Connolly, and Lynette Hirschman. 1995. A model-](https://aclanthology.org/M95-1005)
+[theoretic coreference scoring scheme. In](https://aclanthology.org/M95-1005) _Sixth Mes-_
+_sage Understanding Conference (MUC-6): Proceed-_
+_ings of a Conference Held in Columbia, Maryland,_
+_November 6-8, 1995_ .
+
+
+Xiaozhi Wang, Yulin Chen, Ning Ding, Hao Peng, Zimu
+Wang, Yankai Lin, Xu Han, Lei Hou, Juanzi Li,
+[Zhiyuan Liu, Peng Li, and Jie Zhou. 2022. MAVEN-](https://aclanthology.org/2022.emnlp-main.60)
+[ERE: A unified large-scale dataset for event coref-](https://aclanthology.org/2022.emnlp-main.60)
+[erence, temporal, causal, and subevent relation ex-](https://aclanthology.org/2022.emnlp-main.60)
+[traction. In](https://aclanthology.org/2022.emnlp-main.60) _Proceedings of the 2022 Conference on_
+_Empirical Methods in Natural Language Processing_,
+pages 926–941, Abu Dhabi, United Arab Emirates.
+Association for Computational Linguistics.
+
+
+Xiaozhi Wang, Ziqi Wang, Xu Han, Wangyi Jiang, Rong
+Han, Zhiyuan Liu, Juanzi Li, Peng Li, Yankai Lin,
+[and Jie Zhou. 2020. MAVEN: A Massive General](https://doi.org/10.18653/v1/2020.emnlp-main.129)
+[Domain Event Detection Dataset. In](https://doi.org/10.18653/v1/2020.emnlp-main.129) _Proceedings_
+_of the 2020 Conference on Empirical Methods in_
+_Natural Language Processing (EMNLP)_, pages 1652–
+1671, Online. Association for Computational Linguistics.
+
+
+[M. J. Wood. 2018. Propagating and debunking conspir-](https://doi.org/10.1089/cyber.2017.0669)
+[acy theories on twitter during the 2015–2016 zika](https://doi.org/10.1089/cyber.2017.0669)
+[virus outbreak.](https://doi.org/10.1089/cyber.2017.0669) _Cyberpsychology, Behavior, and So-_
+_cial Networking_, 21(8):485–490.
+
+
+[Michael J. Wood and Karen M. Douglas. 2013. “what](https://doi.org/10.3389/fpsyg.2013.00409)
+[about building 7?” a social psychological study of on-](https://doi.org/10.3389/fpsyg.2013.00409)
+[line discussion of 9/11 conspiracy theories.](https://doi.org/10.3389/fpsyg.2013.00409) _Frontiers_
+_in Psychology_, 4.
+
+
+Wenlin Yao, Zeyu Dai, Maitreyi Ramaswamy, Bonan
+[Min, and Ruihong Huang. 2020. Weakly Supervised](https://doi.org/10.18653/v1/2020.emnlp-main.430)
+[Subevent Knowledge Acquisition. In](https://doi.org/10.18653/v1/2020.emnlp-main.430) _Proceedings_
+_of the 2020 Conference on Empirical Methods in_
+_Natural Language Processing (EMNLP)_, pages 5345–
+5356, Online. Association for Computational Linguistics.
+
+
+Yutao Zeng, Xiaolong Jin, Saiping Guan, Jiafeng Guo,
+[and Xueqi Cheng. 2020. Event coreference resolu-](https://doi.org/10.18653/v1/2020.coling-main.275)
+[tion with their paraphrases and argument-aware em-](https://doi.org/10.18653/v1/2020.coling-main.275)
+[beddings. In](https://doi.org/10.18653/v1/2020.coling-main.275) _Proceedings of the 28th International_
+_Conference on Computational Linguistics_, pages
+3084–3094, Barcelona, Spain (Online). International
+Committee on Computational Linguistics.
+
+
+Xiyang Zhang, Muhao Chen, and Jonathan May. 2021.
+
+[Salience-aware event chain modeling for narrative](https://doi.org/10.18653/v1/2021.emnlp-main.107)
+[understanding. In](https://doi.org/10.18653/v1/2021.emnlp-main.107) _Proceedings of the 2021 Confer-_
+_ence on Empirical Methods in Natural Language Pro-_
+_cessing_, pages 1418–1428, Online and Punta Cana,
+Dominican Republic. Association for Computational
+Linguistics.
+
+
+
+**A** **Appendix**
+
+
+**A.1** **ChatGPT Prompt**
+
+
+The designed instruction prompt for ChatGPT baseline is: ""Conspiracy theories are narratives that
+explains an event or situation in an irrational or
+malicious manner. Please reply Yes if the following text contains conspiracy theory, else reply No.
+
+Text: xxx. Answer:""
+
+
+
+9822
+
+
+",,"The proposed event relation graph approach improves both precision and recall of conspiracy theory identification compared to baselines.,
+The model generalizes well for new unseen media sources, showing a 3.59% increase in precision and 5.13% in recall under media source splitting.,
+Ablation studies confirm the synergy between soft labels (event-aware language model) and hard labels (graph encoder).,
+Each type of event relation (coreference, temporal, causal, subevent) is crucial for performance, with their removal causing significant drops in metrics.","Media source splitting and random splitting of datasets.,
+Precision, recall, and F1 scores for the conspiracy class.,
+Comparison with baselines (all-conspiracy, chatgpt, longformer, longformer + additional features).,
+MUC, B3, CEAF, and BLANC metrics for event coreference resolution.,
+Macro-averaged precision, recall, and F1 for event relation tasks.","Develop more sophisticated methods to improve event relation graph construction.,
+Better extraction of implicit event relations to address current limitations in identifying subtle causal connections.",Yes,"Conspiracy theories are defined as 'narratives that explain an event or situation in an irrational or malicious manner.',
+They are described as 'secretly plotted by malicious groups at the expense of an unwitting population.'",No,,Yes,"Conspiracy theories often mix uncorrelated events or present unusual distributions of event relations.,
+They involve less coreference and temporal relations but more causal and subevent relations.,
+They rely on fabricated logical chains (e.g., false causal relations) and verbose explanations.",Yes,"Longformer,
+Bi-LSTM,
+Heterogeneous Graph Attention Network",No,,No,,Yes,"The data reflects news articles from both conspiracy theory media sources (58) and mainstream media sources (92).,
+The analysis focuses on content structures and logical reasoning in narratives.",No,,False

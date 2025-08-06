@@ -1,0 +1,15 @@
+acl-anthology       # search acl
+arxiv               # search arxiv
+crossref-commons    # search crossref
+fitz                # load pdf from web source
+httpx==0.27.2       # seems required for scholarly (doesn't work though)
+ipykernel
+matplotlib
+openai              # API-based LLM querying
+pandas
+pyalex              # search acl
+pybliometrics       # search scopus, science direct
+pymupdf4llm         # convert fitz pdfs to markdown strings
+semanticscholar     # search semantic scholar
+scholarly           # search google scholar (doesn't work though)
+tqdm
